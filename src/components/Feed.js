@@ -1,4 +1,10 @@
 import React, { useState , useEffect } from 'react';
+import { Swiper, SwiperSlide } from 'swiper/react';
+import 'swiper/css';
+import 'swiper/css/effect-coverflow';
+import 'swiper/css/pagination';
+import { Autoplay, EffectCoverflow } from 'swiper/modules';
+
 import {
   Grid2,
   AppBar,
@@ -32,21 +38,7 @@ function Feed() {
   const [newComment, setNewComment] = useState('');
 
 
-  const [mockFeeds, setFeeds] = useState([
-    {
-      id: 1,
-      title: '게시물 1',
-      description: '이것은 게시물 1의 설명입니다.',
-      image: 'https://images.unsplash.com/photo-1551963831-b3b1ca40c98e',
-    },
-    {
-      id: 2,
-      title: '게시물 2',
-      description: '이것은 게시물 2의 설명입니다.',
-      image: 'https://images.unsplash.com/photo-1521747116042-5a810fda9664',
-    },
-    // 추가 피드 데이터
-  ]);
+  const [mockFeeds, setFeeds] = useState([]);
 
 
 
@@ -76,15 +68,36 @@ function Feed() {
         });
     }
   
+    let fnCmtList = (feedId) => {
+    
+      let url;
+    
+
+      url = "http://localhost:3003/feed/comment/"+ feedId ;
+      
+    
+      fetch(url)
+          .then((res)=> res.json())
+          .then(data => {
+              console.log(data);
+              if (data.message == 'success' ) {
+                  //alert(data.result+'님 환영합니다.');
+                  //location.href = "../day3/product-list.html";
+                  console.log("test",data);
+                  setComments(data.list);
+                  //setFeeds(data.list);
+              } else {
+              }
+          })
+          .catch( err => {
+          });
+    }
 
   const handleClickOpen = (feed) => {
     setSelectedFeed(feed);
     setOpen(true);
-    setComments([
-      { id: 'user1', text: '멋진 사진이에요!' },
-      { id: 'user2', text: '이 장소에 가보고 싶네요!' },
-      { id: 'user3', text: '아름다운 풍경이네요!' },
-    ]); // 샘플 댓글 추가
+    fnCmtList(feed.feedId);
+
     setNewComment(''); // 댓글 입력 초기화
   };
 
@@ -96,7 +109,7 @@ function Feed() {
 
   const handleAddComment = () => {
     if (newComment.trim()) {
-      setComments([...comments, { id: 'currentUser', text: newComment }]); // 댓글 작성자 아이디 추가
+      setComments([...comments, { userId: 'currentUser', content: newComment }]); // 댓글 작성자 아이디 추가
       setNewComment('');
     }
   };
@@ -122,7 +135,7 @@ function Feed() {
                 <CardMedia
                   component="img"
                   height="200"
-                  image={feed.imageUrl}
+                  image={ feed.images ? "http://localhost:3003/" + feed.images[0].imgPath : null }
                   alt={feed.title}
                   onClick={() => handleClickOpen(feed)}
                   style={{ cursor: 'pointer' }}
@@ -152,26 +165,47 @@ function Feed() {
           </IconButton>
         </DialogTitle>
         <DialogContent sx={{ display: 'flex' }}>
-          <Box sx={{ flex: 1 }}>
+          <Swiper
+            grabCursor={true}
+            centeredSlides={true}
+            slidesPerView={1}
+            loop={true}
+            modules={[Autoplay]}
+            autoplay={{
+              delay: 3000,
+              disableOnInteraction: false,
+            }}
+          >
+            {selectedFeed?.images && selectedFeed.images.map((item, index) => (
+              <SwiperSlide key={index}>
+                <img
+                  src={`http://localhost:3003/${item.imgPath}`}
+                  alt={item.imgName}
+                  style={{
+                    width: '100%',
+                    height: 'auto',
+                    maxHeight: '300px',
+                    objectFit: 'cover',
+                    borderRadius: '8px',
+                    marginTop: '10px'
+                  }}
+                />
+              </SwiperSlide>
+            ))}
+          </Swiper>
+          <Box sx={{  }}>
             <Typography variant="body1">{selectedFeed?.content}</Typography>
-            {selectedFeed?.imageUrl && (
-              <img
-                src={selectedFeed.imageUrl}
-                alt={selectedFeed.content}
-                style={{ width: '100%', marginTop: '10px' }}
-              />
-            )}
           </Box>
-
+          {/* mui는 >> inputRef={useRef} <<  */}
           <Box sx={{ width: '300px', marginLeft: '20px' }}>
             <Typography variant="h6">댓글</Typography>
             <List>
               {comments.map((comment, index) => (
                 <ListItem key={index}>
                   <ListItemAvatar>
-                    <Avatar>{comment.id.charAt(0).toUpperCase()}</Avatar> {/* 아이디의 첫 글자를 아바타로 표시 */}
+                    <Avatar>{comment.userId.charAt(0).toUpperCase()}</Avatar> {/* 아이디의 첫 글자를 아바타로 표시 */}
                   </ListItemAvatar>
-                  <ListItemText primary={comment.text} secondary={comment.id} /> {/* 아이디 표시 */}
+                  <ListItemText primary={comment.content} secondary={comment.userId} /> {/* 아이디 표시 */}
                 </ListItem>
               ))}
             </List>

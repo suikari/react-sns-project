@@ -8,6 +8,7 @@ import Register from './components/Register';
 import MyPage from './components/MyPage';
 import Menu from './components/Menu'; // Menu로 변경
 import { jwtDecode } from "jwt-decode";
+import RecoilEx from './components/RecoilEx';
 
 function App() {
   const location = useLocation();
@@ -41,6 +42,7 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/mypage" element={<MyPage />} />
+          <Route path="/recoil" element={<RecoilEx />} />
         </Routes>
       </Box>
     </Box>
