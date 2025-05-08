@@ -27,5 +27,9 @@ router.put('/comment', authMiddleware, feedController.updateComment);
 // 댓글 삭제
 router.delete('/comment/:commentId', authMiddleware, feedController.deleteComment);
 
+// 댓글 목록 조회
+router.get('/comment/:userId', authMiddleware, feedController.getUserComments);
+
+
 module.exports = router;
 

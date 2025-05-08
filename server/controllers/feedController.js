@@ -345,6 +345,25 @@ exports.deleteComment = async (req, res) => {
   }
 };
 
+// 특정 사용자(userId)의 댓글 목록 가져오기
+exports.getUserComments = async (req, res) => {
+  const userId = req.params.userId;
+
+  try {
+    const [rows] = await db.query(`
+      SELECT c.*, u.username, u.profileImage
+      FROM tbl_comment c
+      JOIN tbl_users u ON c.userId = u.id
+      WHERE c.userId = ?
+      ORDER BY c.createdAt DESC
+    `, [userId]);
+
+    res.json(rows);
+  } catch (err) {
+    console.error('댓글 목록 조회 실패:', err);
+    res.status(500).json({ error: '서버 오류' });
+  }
+};
 
 // 📌 4. 좋아요 토글
 exports.toggleLike = async (req, res) => {
