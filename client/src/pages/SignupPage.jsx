@@ -3,8 +3,12 @@ import {
   Box, TextField, Button, Avatar, Typography, Alert
 } from '@mui/material';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 const SignupForm = ({ onSuccess }) => {
+
+  const navigate = useNavigate(); // 페이지 이동을 위한 함수 리턴
+  
   const [form, setForm] = useState({
     username: '',
     email: '',
@@ -75,7 +79,9 @@ const SignupForm = ({ onSuccess }) => {
         await axios.post("http://localhost:3003/api/auth/signup", formData, {
             headers: { "Content-Type": "multipart/form-data" },
         });
-      onSuccess();
+      alert("회원가입 완료!");
+      navigate('/login');
+
     } catch (err) {
       setErrorMsg(err.response?.data?.message || '회원가입 실패');
     }
@@ -134,7 +140,7 @@ const SignupForm = ({ onSuccess }) => {
         fullWidth variant="contained" sx={{ mt: 3 }}
         onClick={handleSubmit}
       >
-        회원가입 완료
+        회원가입
       </Button>
     </Box>
   );

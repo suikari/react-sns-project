@@ -1,8 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { TextField, Box, Stack, Typography, Chip, Button, IconButton } from '@mui/material';
+import {
+  TextField, Box, Stack, Typography, Chip, Button,
+  IconButton
+} from '@mui/material';
 import PhotoCamera from '@mui/icons-material/PhotoCamera';
 import axios from 'axios';
 import DeleteIcon from '@mui/icons-material/Delete';
+import { useNavigate } from 'react-router-dom';
 
 const FeedCreate = () => {
   const [content, setContent] = useState('');
@@ -17,6 +21,8 @@ const FeedCreate = () => {
   const [selectedUser, setSelectedUser] = useState(null);
 
   const textAreaRef = useRef(null);
+  const dropRef = useRef(null);
+  const navigate = useNavigate(); // 페이지 이동을 위한 함수 리턴
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -30,14 +36,11 @@ const FeedCreate = () => {
     fetchUsers();
   }, []);
 
-  // 텍스트 변경 시 멘션 처리를 위한 함수
   const handleChange = (e) => {
     const newContent = e.target.value;
     setContent(newContent);
 
-    // `@` 뒤에 입력된 텍스트 추출
     const mentionText = newContent.split('@').pop().split(' ')[0];
-
     if (mentionText.length > 0) {
       setIsMentioning(true);
       setMentionList(
@@ -52,30 +55,18 @@ const FeedCreate = () => {
   };
 
   const handleMentionSelect = (user) => {
-    // 선택된 사용자 설정
     setSelectedUser(user);
-  
-    // @뒤의 텍스트를 현재 사용자로 업데이트
     const updatedContent = content.slice(0, content.lastIndexOf('@')) + `@${user.username} `;
     setContent(updatedContent);
-  
-    // mentionList에서 해당 사용자를 제외
-    setUsers((prevList) => 
-      prevList.filter((item) => item.username !== user.username)
-    );
-    
-    console.log(mentionList);
-    // 멘션 박스 닫기
+    setUsers((prevList) => prevList.filter((item) => item.username !== user.username));
     setIsMentioning(false);
   };
 
-  // 멘션을 파란색으로 표시하는 함수
   const renderMentionedText = (text) => {
     const regex = /@(\w+)/g;
     const parts = [];
     let lastIndex = 0;
 
-    // 정규식을 통해 멘션을 찾아서 파란색으로 변경
     text.replace(regex, (match, username, index) => {
       if (index > lastIndex) {
         parts.push(text.slice(lastIndex, index));
@@ -96,7 +87,6 @@ const FeedCreate = () => {
     return parts;
   };
 
-  // 멘션 박스 위치 계산
   const calculateMentionBoxPosition = () => {
     const textarea = textAreaRef.current;
     const cursorPos = textarea.selectionStart;
@@ -104,12 +94,12 @@ const FeedCreate = () => {
     const lastMentionIndex = textBeforeCursor.lastIndexOf('@');
     if (lastMentionIndex === -1) return { top: 0, left: 0 };
 
-    const mentionWidth = textBeforeCursor.slice(lastMentionIndex).length * 8; // 각 문자에 대해 대략적인 너비
+    const mentionWidth = textBeforeCursor.slice(lastMentionIndex).length * 8;
     const textareaRect = textarea.getBoundingClientRect();
 
     return {
-      top: textareaRect.top + textareaRect.height,  // 텍스트 필드 바로 아래
-      left: textareaRect.left + mentionWidth,       // `@` 뒤로 멘션 박스를 시작
+      top: textareaRect.top + textareaRect.height,
+      left: textareaRect.left + mentionWidth,
     };
   };
 
@@ -118,16 +108,48 @@ const FeedCreate = () => {
       e.preventDefault();
       const newTag = tagInput.trim();
       if (newTag && !tags.includes(newTag)) {
-        setTags([...tags, newTag]);
+        setTags([...tags, '#' + newTag]);
       }
       setTagInput('');
     }
   };
 
+  const handleFileChange = (e) => {
+    const selectedFiles = Array.from(e.target.files);
+    handleFiles(selectedFiles);
+  };
+
+  const handleFiles = (selectedFiles) => {
+    setFiles((prev) => [...prev, ...selectedFiles]);
+
+    selectedFiles.forEach((file) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPreviewUrls((prev) => [...prev, reader.result]);
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const droppedFiles = Array.from(e.dataTransfer.files).filter(
+      (file) => file.type.startsWith('image/')
+    );
+    handleFiles(droppedFiles);
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
   const handleSubmit = () => {
     if (!content.trim()) return alert('내용을 입력해주세요.');
 
-    const token = localStorage.getItem('token');  // 로컬 스토리지에서 토큰을 가져옵니다.
+    const token = localStorage.getItem('token');
     if (!token) {
       alert('로그인이 필요합니다.');
       return;
@@ -136,35 +158,37 @@ const FeedCreate = () => {
     const formData = new FormData();
     formData.append('content', content);
     formData.append('location', location);
-    tags.forEach(tag => formData.append('tags', tag));
-    files.forEach(file => formData.append('files', file));
+    tags.forEach((tag) => formData.append('hashtags', tag));
+    files.forEach((file) => formData.append('files', file));
 
-    axios.post('http://localhost:3003/api/feed', formData, {
-      headers: {
-        Authorization: `Bearer ${token}`,  // JWT 토큰을 Authorization 헤더에 포함시킴
-        'Content-Type': 'multipart/form-data'  // 콘텐츠 유형을 multipart/form-data로 설정
-      }
-    })
-    .then(response => {
-      alert('피드가 등록되었습니다.');
-      setContent('');
-      setFiles([]);
-      setPreviewUrls([]);
-      setTags([]);
-      setTagInput('');
-      setLocation('');
-    })
-    .catch(error => {
-      console.error('피드 등록 실패:', error);
-      alert('등록 중 오류가 발생했습니다.');
-    });
+    axios
+      .post('http://localhost:3003/api/feed', formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data',
+        },
+      })
+      .then(() => {
+        alert('피드가 등록되었습니다.');
+        setContent('');
+        setFiles([]);
+        setPreviewUrls([]);
+        setTags([]);
+        setTagInput('');
+        setLocation('');
+        navigate('/');
+
+      })
+      .catch((error) => {
+        console.error('피드 등록 실패:', error);
+        alert('등록 중 오류가 발생했습니다.');
+      });
   };
 
   return (
-    <Box sx={{ p: 3, border: '1px solid #ccc', borderRadius: 2, bgcolor: '#fafafa' }}>
+    <Box sx={{ p: 3, border: '1px solid #ccc', borderRadius: 2}}>
       <Typography variant="h6" sx={{ mb: 2 }}>피드 작성</Typography>
 
-      {/* 멘션 기능을 위한 텍스트 필드 */}
       <TextField
         ref={textAreaRef}
         value={content}
@@ -176,7 +200,6 @@ const FeedCreate = () => {
         sx={{ mb: 2 }}
       />
 
-      {/* 멘션할 사용자가 있으면 목록 표시 */}
       {isMentioning && mentionList.length > 0 && (
         <Box sx={{
           position: 'absolute',
@@ -193,7 +216,7 @@ const FeedCreate = () => {
               sx={{
                 padding: 1,
                 cursor: 'pointer',
-                '&:hover': { backgroundColor: '#f0f0f0' }
+                '&:hover': { backgroundColor: '#f0f0f0' },
               }}
               onClick={() => handleMentionSelect(user)}
             >
@@ -203,7 +226,6 @@ const FeedCreate = () => {
         </Box>
       )}
 
-      {/* 위치 입력 필드 */}
       <TextField
         label="위치"
         fullWidth
@@ -212,7 +234,6 @@ const FeedCreate = () => {
         sx={{ mb: 2 }}
       />
 
-      {/* 태그 입력 */}
       <TextField
         label="태그 입력 (쉼표 또는 Enter)"
         value={tagInput}
@@ -226,13 +247,12 @@ const FeedCreate = () => {
         {tags.map((tag, idx) => (
           <Chip
             key={idx}
-            label={`#${tag}`}
+            label={tag}
             onDelete={() => setTags(tags.filter((_, i) => i !== idx))}
           />
         ))}
       </Stack>
 
-      {/* 이미지 업로드 */}
       <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 2 }}>
         <input
           accept="image/*"
@@ -240,7 +260,7 @@ const FeedCreate = () => {
           multiple
           type="file"
           hidden
-          onChange={(e) => setFiles([...files, ...e.target.files])}
+          onChange={handleFileChange}
         />
         <label htmlFor="upload-files">
           <IconButton color="primary" component="span">
@@ -250,7 +270,22 @@ const FeedCreate = () => {
         <Typography variant="body2">{files.length}개의 이미지 선택됨</Typography>
       </Stack>
 
-      {/* 파일 미리보기 */}
+      <Box
+        ref={dropRef}
+        onDrop={handleDrop}
+        onDragOver={handleDragOver}
+        sx={{
+          border: '2px dashed #aaa',
+          borderRadius: 2,
+          p: 2,
+          mb: 2,
+          textAlign: 'center',
+          color: '#888',
+        }}
+      >
+        여기로 이미지 드래그 앤 드롭
+      </Box>
+
       {previewUrls.length > 0 && (
         <Stack direction="row" spacing={2} sx={{ mb: 2, overflowX: 'auto' }}>
           {previewUrls.map((url, idx) => (
@@ -258,12 +293,14 @@ const FeedCreate = () => {
               <img src={url} alt={`preview-${idx}`} style={{ width: 100, height: 100, objectFit: 'cover' }} />
               <IconButton
                 size="small"
-                onClick={() => setPreviewUrls(previewUrls.filter((_, i) => i !== idx))}
+                onClick={() => {
+                  setPreviewUrls(previewUrls.filter((_, i) => i !== idx));
+                  setFiles(files.filter((_, i) => i !== idx));
+                }}
                 sx={{
                   position: 'absolute',
                   top: 2,
                   right: 2,
-                  bgcolor: '#fff',
                   boxShadow: 1,
                 }}
               >
@@ -274,7 +311,6 @@ const FeedCreate = () => {
         </Stack>
       )}
 
-      {/* 피드 등록 버튼 */}
       <Button variant="contained" fullWidth onClick={handleSubmit}>
         등록하기
       </Button>

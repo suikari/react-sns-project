@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState , useContext } from 'react';
+import { Button } from '@mui/material';
 import {
   Drawer,
   List,
@@ -12,12 +13,18 @@ import {
 } from '@mui/material';
 import { Home, Add, AccountCircle, Menu as MenuIcon } from '@mui/icons-material';
 import { Link } from 'react-router-dom';
+import { DarkModeContext } from "../context/DarkModeContext"
+import Brightness4Icon from '@mui/icons-material/Brightness4';
+import Brightness7Icon from '@mui/icons-material/Brightness7';
+
 
 const drawerWidth = 240;
 const collapsedWidth = 60;
 
 function Menu() {
   const [open, setOpen] = useState(false);
+  const value = useContext(DarkModeContext);
+  console.log(value);
 
   const toggleDrawer = () => {
     setOpen(!open);
@@ -46,6 +53,13 @@ function Menu() {
             <MenuIcon />
           </IconButton>
         </Toolbar>
+        <Toolbar sx={{ justifyContent: open ? 'flex-end' : 'center' }}>
+        <Button onClick={() => value.setDarkMode(!value.darkMode)}>
+            {value.darkMode ? <Brightness7Icon /> : <Brightness4Icon />}
+        </Button>
+        </Toolbar>
+
+
         <List>
           <Tooltip title="피드" placement="right" disableHoverListener={open}>
             <ListItem button component={Link} to="/">
@@ -74,14 +88,6 @@ function Menu() {
             </ListItem>
           </Tooltip>
 
-          <Tooltip title="Recoil" placement="right" disableHoverListener={open}>
-            <ListItem button component={Link} to="/recoil">
-              <ListItemIcon>
-                <AccountCircle />
-              </ListItemIcon>
-              {open && <ListItemText primary="recoil" />}
-            </ListItem>
-          </Tooltip>
         </List>
       </Drawer>
 

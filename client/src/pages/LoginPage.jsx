@@ -63,6 +63,11 @@ const LoginPage = () => {
         sx={formField}
         value={password}
         onChange={(e) => setPassword(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') {
+            handleLogin();
+          }
+        }}
       />
       <Button variant="contained" sx={formButton} onClick={handleLogin}>
         로그인

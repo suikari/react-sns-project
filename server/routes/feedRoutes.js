@@ -10,11 +10,22 @@ router.post('/', authMiddleware, upload.array('files'), feedController.createPos
 // 피드 전체 조회
 router.get('/', authMiddleware, feedController.getAllPosts);
 
-// 댓글 작성
-router.post('/comment', authMiddleware, feedController.addComment);
+// 하나 조회
+router.get('/:postId', authMiddleware, feedController.getPostById);
+
+
 
 // 좋아요 토글
 router.post('/:postId/like', authMiddleware, feedController.toggleLike);
+
+// 댓글 작성
+router.post('/comment', authMiddleware, feedController.addComment);
+
+// 댓글 수정
+router.put('/comment', authMiddleware, feedController.updateComment);
+
+// 댓글 삭제
+router.delete('/comment/:commentId', authMiddleware, feedController.deleteComment);
 
 module.exports = router;
 
