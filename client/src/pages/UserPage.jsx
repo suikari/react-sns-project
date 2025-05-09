@@ -1,18 +1,23 @@
 import { useParams , useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import axios from 'axios';
-import { Avatar, Box, Tabs, Tab, Typography } from '@mui/material';
+import { Avatar, Box, Tabs, Tab, Typography , Button } from '@mui/material';
 import { jwtDecode } from 'jwt-decode';
 import FeedDetailModal from './FeedDetailModal'; // 경로 확인
+import { Flag } from '@mui/icons-material';
 
 export default function UserPage() {
   const params = useParams();
   const [userId, setUserId] = useState(null);
+  const [currentId, setCurrentId] = useState(null);
   const [user, setUser] = useState(null);
   const [feeds, setFeeds] = useState([]);
   const [comments, setComments] = useState([]);
+  const [likes, setLikes] = useState([]);
+  const [isFollowing, setIsFollowing] = useState(false);
 
   const [value, setValue] = useState(0); // 탭 상태 관리
+  const [isflag, setFlag] = useState(false); // 탭 상태 관리
 
   const navigate = useNavigate(); // 페이지 이동을 위한 함수 리턴
 
@@ -42,6 +47,14 @@ export default function UserPage() {
         setUserId(decoded.id);
       }
     }
+
+    const ctoken = localStorage.getItem('token');
+    if (ctoken) {
+      const cdecoded = jwtDecode(ctoken);
+      setCurrentId(cdecoded.id);
+    }
+   
+
   }, [params]);
 
   useEffect(() => {
@@ -54,41 +67,97 @@ export default function UserPage() {
         navigate('/login');
       }
 
-      const [userRes, followRes, myfeed, mycomment] = await Promise.all([
+      const [userRes, followRes, myfeed, mycomment, mylikelist ] = await Promise.all([
         axios.get(`http://localhost:3003/api/users/${userId}`),
         axios.get(`http://localhost:3003/api/users/follow/info/${userId}`),
-        axios.get(`http://localhost:3003/api/feed?filter=my`, {
+        axios.get(`http://localhost:3003/api/feed?filter=my&userId=${userId}`, {
           headers: { Authorization: `Bearer ${token}` },
         }),
         axios.get(`http://localhost:3003/api/feed/comment/${userId}`, {
             headers: { Authorization: `Bearer ${token}` },
-          }),
+        }),
+        axios.get(`http://localhost:3003/api/feed/like/${userId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+      }),
 
       ]);
       setUser(userRes.data[0]);
       setFollowInfo(followRes.data);
       setFeeds(myfeed.data);
       setComments(mycomment.data);
-      console.log(mycomment.data);
+      setLikes(mylikelist.data);
+
+      if (followRes.data.followers && Array.isArray(followRes.data.followers)) {
+        const isUserFollowing = followRes.data.followers.some((follower) => follower.id === currentId);
+        setIsFollowing(isUserFollowing);
+      }
+
+      console.log(followRes.data);
     };
 
     fetchData();
-  }, [userId]);
+  }, [userId , isflag]);
 
   const handleTabChange = (event, newValue) => {
     setValue(newValue); // 탭 클릭 시 value 상태 업데이트
   };
+ 
   
+  const handleFollow = async (userId) => {
+    const token = localStorage.getItem('token') || '';
+
+    try {
+      await axios.post(`http://localhost:3003/api/users/${userId}/follow`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setIsFollowing(true);
+      setFlag(!isflag);
+    } catch (err) {
+      console.error('팔로우 실패', err);
+    }
+  };
+  
+  const handleUnfollow = async (userId) => {
+    const token = localStorage.getItem('token') || '';
+
+    try {
+      await axios.delete(`http://localhost:3003/api/users/${userId}/unfollow`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setIsFollowing(false);
+      setFlag(!isflag);
+    } catch (err) {
+      console.error('언팔로우 실패', err);
+    }
+  };
+
   if (!userId || !user) return <div>Loading...</div>;
 
   return (
     <Box p={3}>
       <Box display="flex" alignItems="center" gap={2}>
         <Avatar src={user.profileImage} sx={{ width: 64, height: 64 }} />
-        <Box>
+        <Box flexGrow={1}>
           <Typography variant="h6" fontWeight="bold">{user.username}</Typography>
           <Typography variant="body2" color="text.secondary">{user.email}</Typography>
         </Box>
+
+        {/* 본인 페이지가 아닌 경우에만 버튼 노출 */}
+        {currentId !== user.id && (
+          isFollowing ? (
+            <Button variant="outlined" color="secondary" onClick={()=>{
+              handleUnfollow(user.id);
+            }}>
+              언팔로우
+            </Button>
+          ) : (
+            <Button variant="contained" color="primary" onClick={()=>{
+              handleFollow(user.id);
+            }}>
+              팔로우
+            </Button>
+          )
+        )}
       </Box>
 
       <Box mt={2} display="flex" justifyContent="space-between">
@@ -206,7 +275,68 @@ export default function UserPage() {
         </>
       )}
       {value === 2 && (
-        <Typography variant="h6" mt={3}>좋아요 콘텐츠</Typography>
+            <>
+            <Typography component="div" variant="h6" mt={3}>
+              좋아요 피드 목록
+            </Typography>
+      
+            <Box mt={3} display="flex" flexWrap="wrap" gap={2}>
+              {likes.map((feed, index) => (
+                <Box
+                  key={index}
+                  onClick={() => openModalWithPostId(feed.postId)}
+                  position="relative"
+                  width="calc(25% - 16px)"
+                  height="200px"
+                  sx={{
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease',
+                    '&:hover img': {
+                      opacity: 0.7,
+                    },
+                    '&:hover .feed-content': {
+                      opacity: 1,
+                    },
+                  }}
+                >
+                  <img
+                    src={feed.thumbnail || "http://localhost:3003/uploads/noimage.jpg"}
+                    alt={feed.content}
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover',
+                      borderRadius: '8px',
+                      transition: 'opacity 0.3s ease',
+                    }}
+                  />
+                  <Box
+                    className="feed-content"
+                    sx={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                      color: 'white',
+                      opacity: 0,
+                      display: 'flex',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      padding: '10px',
+                      borderRadius: '8px',
+                      transition: 'opacity 0.3s ease',
+                    }}
+                  >
+                    <Typography variant="body2" align="center">
+                      {feed.content}
+                    </Typography>
+                  </Box>
+                </Box>
+              ))}
+            </Box>
+          </>
       )}
     </Box>
 

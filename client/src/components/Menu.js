@@ -1,5 +1,4 @@
-import React, { useState , useContext } from 'react';
-import { Button } from '@mui/material';
+import React, { useState, useContext, useEffect } from 'react';
 import {
   Drawer,
   List,
@@ -9,13 +8,26 @@ import {
   IconButton,
   Toolbar,
   Box,
-  Tooltip
+  Tooltip,
+  Badge,
+  Button
 } from '@mui/material';
-import { Home, Add, AccountCircle, Menu as MenuIcon } from '@mui/icons-material';
+import {
+  Home,
+  Add,
+  AccountCircle,
+  Notifications,
+  Search,
+  MailOutline,
+  Brightness4,
+  Brightness7,
+  Menu as MenuIcon,
+  Close
+} from '@mui/icons-material';
 import { Link } from 'react-router-dom';
-import { DarkModeContext } from "../context/DarkModeContext"
-import Brightness4Icon from '@mui/icons-material/Brightness4';
-import Brightness7Icon from '@mui/icons-material/Brightness7';
+import axios from 'axios';
+import { DarkModeContext } from "../context/DarkModeContext";
+import NotificationDrawer from '../pages/NotificationDrawer';
 
 
 const drawerWidth = 240;
@@ -23,15 +35,57 @@ const collapsedWidth = 60;
 
 function Menu() {
   const [open, setOpen] = useState(false);
-  const value = useContext(DarkModeContext);
-  console.log(value);
+  const [notificationDrawerOpen, setNotificationDrawerOpen] = useState(false);
+  const [notifications, setNotifications] = useState([]);
 
-  const toggleDrawer = () => {
-    setOpen(!open);
+  const value = useContext(DarkModeContext);
+
+  const toggleDrawer = () => setOpen(!open);
+
+  const toggleNotificationDrawer = () => setNotificationDrawerOpen(prev => !prev);
+
+  const handleNotificationClick = async (id) => {
+    const token = localStorage.getItem('token');
+
+    try {
+
+      // 서버에 읽음 처리 요청
+      await axios.post(`http://localhost:3003/api/notifications/${id}/read`,{},{
+        headers: { Authorization: `Bearer ${token}` },
+      })        
+      .then(res => {
+              // 프론트 상태 업데이트
+        setNotifications(prev =>
+          prev.map(n => (n.id === id ? { ...n, isRead: 1 } : n))
+        );
+
+      })
+      .catch(err => console.error(err));
+  
+
+    } catch (err) {
+      console.error('알림 읽음 처리 실패:', err);
+    }
   };
+
+  useEffect(() => {
+    //if (notificationDrawerOpen) {
+      const token = localStorage.getItem('token');
+
+      axios.get('http://localhost:3003/api/notifications',{
+          headers: { Authorization: `Bearer ${token}` },
+      })
+        .then(res => {
+          setNotifications(res.data);
+          console.log(res.data);
+        })
+        .catch(err => console.error(err));
+    //}
+  }, [notificationDrawerOpen]);
 
   return (
     <Box sx={{ display: 'flex' }}>
+      {/* Sidebar */}
       <Drawer
         variant="permanent"
         sx={{
@@ -53,46 +107,76 @@ function Menu() {
             <MenuIcon />
           </IconButton>
         </Toolbar>
-        <Toolbar sx={{ justifyContent: open ? 'flex-end' : 'center' }}>
-        <Button onClick={() => value.setDarkMode(!value.darkMode)}>
-            {value.darkMode ? <Brightness7Icon /> : <Brightness4Icon />}
-        </Button>
-        </Toolbar>
 
+        <Toolbar sx={{ justifyContent: open ? 'flex-end' : 'center' }}>
+          <Button onClick={() => value.setDarkMode(!value.darkMode)}>
+            {value.darkMode ? <Brightness7 /> : <Brightness4 />}
+          </Button>
+        </Toolbar>
 
         <List>
           <Tooltip title="피드" placement="right" disableHoverListener={open}>
             <ListItem button component={Link} to="/">
-              <ListItemIcon>
-                <Home />
-              </ListItemIcon>
+              <ListItemIcon><Home /></ListItemIcon>
               {open && <ListItemText primary="피드" />}
             </ListItem>
           </Tooltip>
 
           <Tooltip title="등록" placement="right" disableHoverListener={open}>
             <ListItem button component={Link} to="/register">
-              <ListItemIcon>
-                <Add />
-              </ListItemIcon>
+              <ListItemIcon><Add /></ListItemIcon>
               {open && <ListItemText primary="등록" />}
             </ListItem>
           </Tooltip>
 
           <Tooltip title="마이페이지" placement="right" disableHoverListener={open}>
             <ListItem button component={Link} to="/mypage">
-              <ListItemIcon>
-                <AccountCircle />
-              </ListItemIcon>
+              <ListItemIcon><AccountCircle /></ListItemIcon>
               {open && <ListItemText primary="마이페이지" />}
             </ListItem>
           </Tooltip>
 
+          <Tooltip title="알림" placement="right" disableHoverListener={open}>
+            <ListItem button onClick={toggleNotificationDrawer}>
+              <ListItemIcon>
+                <Badge badgeContent={notifications.filter(n => n.isRead == 0).length} color="error">
+                  <Notifications />
+                </Badge>
+              </ListItemIcon>
+              {open && <ListItemText primary="알림" />}
+            </ListItem>
+          </Tooltip>
+
+          <Tooltip title="검색" placement="right" disableHoverListener={open}>
+            <ListItem button component={Link} to="/search">
+              <ListItemIcon><Search /></ListItemIcon>
+              {open && <ListItemText primary="검색" />}
+            </ListItem>
+          </Tooltip>
+
+          <Tooltip title="메시지" placement="right" disableHoverListener={open}>
+            <ListItem button component={Link} to="/messages">
+              <ListItemIcon><MailOutline /></ListItemIcon>
+              {open && <ListItemText primary="메시지" />}
+            </ListItem>
+          </Tooltip>
         </List>
       </Drawer>
 
+      {/* 알림 패널 */}
+      <NotificationDrawer
+        open={open}
+        drawerWidth={drawerWidth}
+        collapsedWidth={collapsedWidth}
+        notificationDrawerOpen={notificationDrawerOpen}
+        toggleNotificationDrawer={toggleNotificationDrawer}
+        notifications={notifications}
+        handleNotificationClick={handleNotificationClick}
+      />
+
+      {/* 본문 영역 */}
       <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
-        {/* 메인 콘텐츠 영역 */}
+        {/* 메인 콘텐츠 렌더링 영역 */}
       </Box>
     </Box>
   );

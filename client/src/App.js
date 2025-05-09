@@ -16,6 +16,7 @@ import SignupPage from './pages/SignupPage';
 import FeedList from './pages/FeedList';
 import FeedCreate from './pages/FeedCreate';
 import UserPage from './pages/UserPage';
+import GroupChat from './pages/GroupChat';
 
 function App() {
   const location = useLocation();
@@ -42,7 +43,24 @@ function App() {
 
 
   useEffect (()=>{
-    if (dToken == '') {
+    if (token) {
+      try {
+        const decoded = jwtDecode(token);
+        const currentTime = Math.floor(Date.now() / 1000); // 현재 시각 (초 단위)
+  
+        if (decoded.exp && decoded.exp < currentTime) {
+          // 토큰 만료됨
+          localStorage.removeItem('token');
+          alert('세션이 만료되었습니다. 다시 로그인해주세요.');
+          navigate('/login');
+        }
+      } catch (err) {
+        console.error('유효하지 않은 토큰입니다:', err);
+        localStorage.removeItem('token');
+        navigate('/login');
+      }
+    } else {
+      // 토큰 없음
       navigate('/login');
     }
   },[dToken])
@@ -63,7 +81,10 @@ function App() {
           <Route path="/register" element={<FeedCreate />} />
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/mypage" element={<UserPage />} />
-          <Route path="/mypage/:userId" element={<UserPage />} />
+          <Route path="/userpage/:userId" element={<UserPage />} />
+          <Route path="/messages" element={<GroupChat />} />
+
+          
         </Routes>
       </Box>
     </Box>

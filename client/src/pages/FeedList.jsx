@@ -170,6 +170,11 @@ const FeedList = () => {
     }
   };
 
+  const handleUserProfile = async (userId) => {
+    navigate(`/userpage/${userId}`);
+  };
+
+
   if (loading) {
     return <Box sx={{ textAlign: 'center', mt: 4 }}><CircularProgress /></Box>;
   }
@@ -209,7 +214,9 @@ const FeedList = () => {
           <CardContent sx={{ pb: 2 }}>
             <Stack direction="row" alignItems="center" spacing={2}>
               <Avatar src={feed.profileImage} sx={{ width: 40, height: 40 }} />
-              <Typography  component="div" variant="subtitle1" sx={{ fontWeight: 'bold' }}>{feed.username}</Typography>
+              <Typography onClick={()=>{
+                handleUserProfile(feed.userId);
+              }}  component="div" variant="subtitle1" sx={{ fontWeight: 'bold' , cursor : 'pointer' }}>{feed.username}</Typography>
             </Stack>
             <Typography component="div"  sx={{ mt: 2, fontSize: 16, lineHeight: 1.5 }}>{feed.content}</Typography>
           </CardContent>

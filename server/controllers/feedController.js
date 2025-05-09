@@ -119,7 +119,12 @@ exports.createPost = async (req, res) => {
   };
 
   exports.getAllPosts = async (req, res) => {
-    const userId = req.user.id;
+    const userId = req.query.userId || req.user?.id; // 쿼리에서 userId를 가져오고, 없으면 req.user.id로 대체
+
+    if (!userId) {
+      return res.status(400).json({ message: 'userId가 필요하거나 로그인이 필요합니다.' });
+    }
+
     const { filter } = req.query;
   
     let query = `
@@ -483,5 +488,41 @@ exports.getPostById = async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: '피드 상세 조회 실패' });
+  }
+};
+
+exports.getUserLikedPosts = async (req, res) => {
+  const userId = req.params.userId;
+
+  try {
+    const [rows] = await db.query(`
+      SELECT 
+        l.likeId, l.postId, l.userId, l.createdAt,
+        u.username AS likedByUsername, u.profileImage AS likedByProfileImage,
+        p.content, p.location, p.createdAt AS postCreatedAt,
+        pu.id AS postUserId, pu.username AS postUsername, pu.profileImage AS postUserProfileImage,
+        pf.filePath AS thumbnail
+      FROM tbl_post_like l
+      JOIN tbl_users u ON l.userId = u.id
+      JOIN tbl_post p ON l.postId = p.postId
+      JOIN tbl_users pu ON p.userId = pu.id
+      LEFT JOIN (
+        SELECT sub.postId, sub.filePath
+        FROM (
+          SELECT postId, filePath,
+                 ROW_NUMBER() OVER (PARTITION BY postId ORDER BY createdAt ASC) AS rn
+          FROM tbl_post_file
+          WHERE fileType = 'image'
+        ) sub
+        WHERE sub.rn = 1
+      ) pf ON l.postId = pf.postId
+      WHERE l.userId = ?
+      ORDER BY l.createdAt DESC
+    `, [userId]);
+
+    res.json(rows);
+  } catch (err) {
+    console.error('좋아요 목록 조회 실패:', err);
+    res.status(500).json({ error: '서버 오류' });
   }
 };

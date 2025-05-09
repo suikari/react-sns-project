@@ -27,18 +27,48 @@ const LoginPage = () => {
   };
 
   const handleGoogleLogin = async (response) => {
+    console.log(response);
+  
     if (response.error) {
       setErrorMsg('구글 로그인 실패');
       return;
     }
     try {
-      const res = await axios.post('http://localhost:3003/api/auth/google', {
-        tokenId: response.credential,
-      });
-      const { token, user } = res.data;
-      localStorage.setItem('token', token);
-      alert(`${user.username}님 환영합니다!`);
-      // TODO: 라우팅 처리
+      const tokenId = response.credential;
+  
+      // 구글 API를 통해 사용자 정보 요청
+      const userInfo = await fetch(`https://www.googleapis.com/oauth2/v3/tokeninfo?id_token=${tokenId}`)
+        .then((res) => res.json())
+        .then((data) => {
+          console.log('User Info:', data);
+          
+          // 구글 로그인 정보를 받아오는 부분
+          const { email, name: username, picture: profileImage } = data;
+          const provider = 'google';
+  
+          // 요청을 보내기 전에 필요한 데이터를 담아보냄
+          axios.post('http://localhost:3003/api/auth/social', {
+            email,
+            username,
+            profileImage,
+            provider,
+          })
+          .then((res) => {
+            const { token, user } = res.data;
+            localStorage.setItem('token', token);
+            alert(`${user.username}님 환영합니다!`);
+            navigate('/');
+          })
+          .catch((err) => {
+            console.error('로그인 API 요청 실패:', err);
+            setErrorMsg(err.response?.data?.message || '로그인 처리 중 오류가 발생했습니다.');
+          });
+        })
+        .catch((err) => {
+          console.error('Failed to fetch user info:', err);
+          setErrorMsg('구글 로그인 정보 요청 실패');
+        });
+  
     } catch (err) {
       setErrorMsg(err.response?.data?.message || '구글 로그인 실패');
     }

@@ -31,6 +31,25 @@ exports.getUserInfo = async (req, res) => {
   }
 };
 
+// 특정 사용자가 팔로우한 사용자 목록 조회
+exports.getFollowingUsers = async (req, res) => {
+  const { userId } = req.params;
+
+  try {
+    const [rows] = await db.execute(
+      `SELECT u.id, u.username, u.profileImage
+       FROM tbl_follow f
+       JOIN tbl_users u ON f.followedId = u.id
+       WHERE f.followerId = ? AND u.deleteYn = 'N'`,
+      [userId]
+    );
+
+    res.json(rows);
+  } catch (err) {
+    console.error('팔로잉 유저 조회 실패:', err);
+    res.status(500).json({ error: '서버 오류가 발생했습니다.' });
+  }
+};
 
 // 팔로우 기능
 exports.followUser = async (req, res) => {
@@ -42,7 +61,7 @@ exports.followUser = async (req, res) => {
   }
 
   try {
-    await db.query('INSERT INTO tbl_follow (follower_id, followed_id) VALUES (?, ?)', [currentUserId, userId]);
+    await db.query('INSERT INTO tbl_follow (followerId, followedId) VALUES (?, ?)', [currentUserId, userId]);
     res.status(200).json({ message: 'Followed successfully' });
   } catch (err) {
     console.error(err);
@@ -56,7 +75,7 @@ exports.unfollowUser = async (req, res) => {
   const { userId } = req.params;
 
   try {
-    await db.query('DELETE FROM tbl_follow WHERE follower_id = ? AND followed_id = ?', [currentUserId, userId]);
+    await db.query('DELETE FROM tbl_follow WHERE followerId = ? AND followedId = ?', [currentUserId, userId]);
     res.status(200).json({ message: 'Unfollowed successfully' });
   } catch (err) {
     console.error(err);

@@ -18,6 +18,10 @@ router.get('/:postId', authMiddleware, feedController.getPostById);
 // 좋아요 토글
 router.post('/:postId/like', authMiddleware, feedController.toggleLike);
 
+// 좋아요 목록
+router.get('/like/:userId', authMiddleware, feedController.getUserLikedPosts);
+
+
 // 댓글 작성
 router.post('/comment', authMiddleware, feedController.addComment);
 
@@ -29,6 +33,7 @@ router.delete('/comment/:commentId', authMiddleware, feedController.deleteCommen
 
 // 댓글 목록 조회
 router.get('/comment/:userId', authMiddleware, feedController.getUserComments);
+
 
 
 module.exports = router;
