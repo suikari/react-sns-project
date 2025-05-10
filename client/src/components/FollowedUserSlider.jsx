@@ -2,6 +2,8 @@
 import React from 'react';
 import { Box, Avatar, Typography } from '@mui/material';
 import { styled } from '@mui/system';
+import "slick-carousel/slick/slick.css"; 
+import "slick-carousel/slick/slick-theme.css";
 
 // 예제 데이터 (나중에 API로 교체)
 const followedUsers = [
