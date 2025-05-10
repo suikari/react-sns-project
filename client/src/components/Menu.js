@@ -1,4 +1,4 @@
-import React, { useState, useContext, useEffect } from 'react';
+import React, { useState, useContext, useEffect, useRef } from 'react';
 import {
   Drawer,
   List,
@@ -22,28 +22,45 @@ import {
   Brightness4,
   Brightness7,
   Menu as MenuIcon,
+  ChevronLeft, 
+  ChevronRight,
   Close
 } from '@mui/icons-material';
-import { Link } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import { DarkModeContext } from "../context/DarkModeContext";
-import NotificationDrawer from '../pages/NotificationDrawer';
-
+import NotificationDrawer from './NotificationDrawer';
+import MoreMenuDrawer from './MoreDrawer';
+import SearchDrawer from './SearchDrawer';
 
 const drawerWidth = 240;
 const collapsedWidth = 60;
 
 function Menu() {
   const [open, setOpen] = useState(false);
+  
   const [notificationDrawerOpen, setNotificationDrawerOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
+  
+  const [moreMenuOpen, setMoreMenuOpen] = useState(false);
+  const moreButtonRef = useRef(null);
+
+  const [searchDrawerOpen, setSearchDrawerOpen] = useState(false);
+  const toggleSearchDrawer = () => setSearchDrawerOpen(prev => !prev);
 
   const value = useContext(DarkModeContext);
+  const navigate = useNavigate(); // useNavigate 훅을 사용하여 navigate 함수 호출
 
   const toggleDrawer = () => setOpen(!open);
 
   const toggleNotificationDrawer = () => setNotificationDrawerOpen(prev => !prev);
 
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    navigate('/login');
+  };
+
+  
   const handleNotificationClick = async (id) => {
     const token = localStorage.getItem('token');
 
@@ -104,14 +121,8 @@ function Menu() {
       >
         <Toolbar sx={{ justifyContent: open ? 'flex-end' : 'center' }}>
           <IconButton onClick={toggleDrawer}>
-            <MenuIcon />
+            { open ?  <ChevronLeft /> : <ChevronRight/> }
           </IconButton>
-        </Toolbar>
-
-        <Toolbar sx={{ justifyContent: open ? 'flex-end' : 'center' }}>
-          <Button onClick={() => value.setDarkMode(!value.darkMode)}>
-            {value.darkMode ? <Brightness7 /> : <Brightness4 />}
-          </Button>
         </Toolbar>
 
         <List>
@@ -148,7 +159,7 @@ function Menu() {
           </Tooltip>
 
           <Tooltip title="검색" placement="right" disableHoverListener={open}>
-            <ListItem button component={Link} to="/search">
+            <ListItem button onClick={toggleSearchDrawer}>
               <ListItemIcon><Search /></ListItemIcon>
               {open && <ListItemText primary="검색" />}
             </ListItem>
@@ -160,6 +171,14 @@ function Menu() {
               {open && <ListItemText primary="메시지" />}
             </ListItem>
           </Tooltip>
+       
+          <Tooltip title="더보기" placement="right" disableHoverListener={open}>
+            <ListItem button ref={moreButtonRef} onClick={() => setMoreMenuOpen(prev => !prev)}>
+              <ListItemIcon><MenuIcon /></ListItemIcon>
+              {open && <ListItemText primary="더보기" />}
+            </ListItem>
+          </Tooltip>
+       
         </List>
       </Drawer>
 
@@ -172,6 +191,20 @@ function Menu() {
         toggleNotificationDrawer={toggleNotificationDrawer}
         notifications={notifications}
         handleNotificationClick={handleNotificationClick}
+      />
+
+      <MoreMenuDrawer
+        anchorEl={moreButtonRef.current}
+        open={moreMenuOpen}
+        onClose={() => setMoreMenuOpen(false)}
+      />
+
+      <SearchDrawer
+        open={open}
+        drawerWidth={drawerWidth}
+        collapsedWidth={collapsedWidth}
+        searchDrawerOpen={searchDrawerOpen}
+        toggleSearchDrawer={toggleSearchDrawer}
       />
 
       {/* 본문 영역 */}

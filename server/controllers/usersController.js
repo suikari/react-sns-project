@@ -118,3 +118,32 @@ exports.getFollowInfo = async (req, res) => {
     res.status(500).json({ message: '서버 오류' });
   }
 };
+
+exports.getUserSearch = async (req, res) => {
+  const currentUserId = req.user.id; // JWT 등으로 인증된 사용자 ID
+  const { keyword } = req.params;
+
+  try {
+    const [users] = await db.execute(`
+      SELECT 
+        u.id,
+        u.email,
+        u.username,
+        u.profileImage,
+        u.createdAt,
+        CASE 
+          WHEN f.followerId IS NOT NULL THEN TRUE 
+          ELSE FALSE 
+        END AS isFollowed
+      FROM tbl_users u
+      LEFT JOIN tbl_follow f 
+        ON u.id = f.followedId AND f.followerId = ?
+      WHERE u.username like '%${keyword}%'
+    `, [currentUserId]);
+
+    res.json(users);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: '서버 오류' });
+  }
+};

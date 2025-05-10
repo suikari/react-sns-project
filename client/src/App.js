@@ -1,11 +1,6 @@
 import React, { useEffect , useState } from 'react';
 import { Route, Routes, useLocation , useNavigate } from 'react-router-dom';
 import { Box, CssBaseline , Button } from '@mui/material';
-import Login from './components/Login';
-import Join from './components/Join'; // Join으로 변경
-import Feed from './components/Feed';
-import Register from './components/Register';
-import MyPage from './components/MyPage';
 import Menu from './components/Menu'; // Menu로 변경
 import { jwtDecode } from "jwt-decode";
 import { createTheme, ThemeProvider } from '@mui/material/styles';
@@ -76,7 +71,6 @@ function App() {
       <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
         <Routes>
           <Route path="/" element={<FeedList />} />
-          <Route path="/join" element={<Join />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<FeedCreate />} />
           <Route path="/signup" element={<SignupPage />} />

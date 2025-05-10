@@ -10,6 +10,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { jwtDecode } from "jwt-decode";
 import { useNavigate } from 'react-router-dom';
+import FollowedUserSlider from '../components/FollowedUserSlider';
 
 const FeedList = () => {
   const [feeds, setFeeds] = useState([]);
@@ -181,6 +182,8 @@ const FeedList = () => {
 
   return (
     <Box sx={{ maxWidth: 900, margin: 'auto', mt: 4, px: 2 }}>
+      <FollowedUserSlider />
+
       <ToggleButtonGroup
         value={filter}
         exclusive
