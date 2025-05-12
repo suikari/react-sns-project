@@ -13,6 +13,8 @@ import FeedCreate from './pages/FeedCreate';
 import UserPage from './pages/UserPage';
 import GroupChat from './pages/GroupChat';
 
+import "./App.css";
+
 function App() {
   const location = useLocation();
   const isAuthPage = location.pathname === '/login' || location.pathname === '/join';
@@ -77,6 +79,7 @@ function App() {
           <Route path="/mypage" element={<UserPage />} />
           <Route path="/userpage/:userId" element={<UserPage />} />
           <Route path="/messages" element={<GroupChat />} />
+          <Route path="/messages/:roomId" element={<GroupChat />} />
 
           
         </Routes>

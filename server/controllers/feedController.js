@@ -119,12 +119,12 @@ exports.createPost = async (req, res) => {
   };
 
   exports.getAllPosts = async (req, res) => {
-    const userId = req.query.userId || req.user?.id; // 쿼리에서 userId를 가져오고, 없으면 req.user.id로 대체
-
+    const userId = req.query.userId || req.user?.id;
+  
     if (!userId) {
       return res.status(400).json({ message: 'userId가 필요하거나 로그인이 필요합니다.' });
     }
-
+  
     const { filter } = req.query;
   
     let query = `
@@ -150,45 +150,46 @@ exports.createPost = async (req, res) => {
     query += ` ${where} ORDER BY p.createdAt DESC`;
   
     try {
-      // 1. 피드 목록 가져오기
       const [posts] = await db.execute(query, params);
-  
-      // 2. 피드 ID 목록 추출
       const postIds = posts.map(p => p.postId);
-      let files = [];
-      let comments = [];
+  
+      let files = [], comments = [], hashtags = [];
   
       if (postIds.length > 0) {
-        // 3. 피드 ID 목록에 해당하는 모든 파일 조회
         const [fileRows] = await db.execute(
-          `
-          SELECT * FROM tbl_post_file
-          WHERE postId IN (${postIds.map(() => '?').join(',')})`,
+          `SELECT * FROM tbl_post_file WHERE postId IN (${postIds.map(() => '?').join(',')})`,
           postIds
         );
         files = fileRows;
   
-        // 4. 각 피드에 대한 댓글 목록 조회
         const [commentRows] = await db.execute(
-          `
-          SELECT c.postId, c.commentId, c.content, c.createdAt, c.parentId, u.id , u.username, u.profileImage
-          FROM tbl_comment c
-          JOIN tbl_users u ON c.userId = u.id
-          WHERE c.postId IN (${postIds.map(() => '?').join(',')})
-          ORDER BY c.createdAt DESC`,
+          `SELECT c.postId, c.commentId, c.content, c.createdAt, c.parentId, u.id, u.username, u.profileImage
+           FROM tbl_comment c
+           JOIN tbl_users u ON c.userId = u.id
+           WHERE c.postId IN (${postIds.map(() => '?').join(',')})
+           ORDER BY c.createdAt DESC`,
           postIds
         );
         comments = commentRows;
-      }
   
-      // 5. 각 post 객체에 files, comments 배열 추가
+        const [hashtagRows] = await db.execute(
+          `SELECT ph.postId, h.tag
+           FROM tbl_post_hashtag ph
+           JOIN tbl_hashtag h ON ph.hashtagId = h.hashtagId
+           WHERE ph.postId IN (${postIds.map(() => '?').join(',')})`,
+          postIds
+        );
+        hashtags = hashtagRows;
+      }
+      console.log("4343",posts,hashtags);
       const postMap = posts.map(post => ({
         ...post,
         files: files.filter(file => file.postId === post.postId),
         comments: comments.filter(comment => comment.postId === post.postId).map(comment => ({
           ...comment,
-          isOwnComment: comment.userId === userId,  // 본인 댓글 여부 추가
+          isOwnComment: comment.userId === userId,
         })),
+        hashtags: hashtags.filter(ht => ht.postId === post.postId).map(ht => ht.tag),
       }));
   
       res.json(postMap);
@@ -197,6 +198,7 @@ exports.createPost = async (req, res) => {
       res.status(500).json({ message: '피드 조회 실패' });
     }
   };
+  
   
 
 // 📌 3. 댓글 작성 (대댓글 포함)

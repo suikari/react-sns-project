@@ -17,4 +17,9 @@ router.delete('/:userId/unfollow', authMiddleware , userController.unfollowUser)
 router.get('/follow/info/:userId', userController.getFollowInfo);
 router.get('/search/:keyword',authMiddleware,userController.getUserSearch);
 
+router.get('/getUserId/:username',userController.getUserId);
+
+
+
+
 module.exports = router;

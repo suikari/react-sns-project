@@ -11,6 +11,10 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import { jwtDecode } from "jwt-decode";
 import { useNavigate } from 'react-router-dom';
 import FollowedUserSlider from '../components/FollowedUserSlider';
+import FeedDetailModal from './FeedDetailModal'; 
+import FeedContent from './FeedContent';
+
+import "../styles/feedList.css";
 
 const FeedList = () => {
   const [feeds, setFeeds] = useState([]);
@@ -25,6 +29,14 @@ const FeedList = () => {
   // const [flag, setFlag] = useState(false);
   const currentUserIdRef = useRef(null);
 
+  const [selectedPostId, setSelectedPostId] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const openModalWithPostId = (postId) => {
+    console.log("33",postId);
+    setSelectedPostId(postId);
+    setIsModalOpen(true);
+  };
 
 
   const navigate = useNavigate(); // 페이지 이동을 위한 함수 리턴
@@ -215,17 +227,20 @@ const FeedList = () => {
       {feeds.map((feed) => (
         <Card key={feed.postId} sx={{ mb: 3, boxShadow: 3, borderRadius: 2 }}>
           <CardContent sx={{ pb: 2 }}>
-            <Stack direction="row" alignItems="center" spacing={2}>
-              <Avatar src={feed.profileImage} sx={{ width: 40, height: 40 }} />
-              <Typography onClick={()=>{
+            <Stack direction="row" alignItems="center" spacing={2} onClick={()=>{
                 handleUserProfile(feed.userId);
-              }}  component="div" variant="subtitle1" sx={{ fontWeight: 'bold' , cursor : 'pointer' }}>{feed.username}</Typography>
+              }} sx={{cursor : 'pointer'}} >
+              <Avatar src={feed.profileImage} sx={{ width: 40, height: 40 }} />
+              <Typography  component="div" variant="subtitle1" sx={{ fontWeight: 'bold' }}>{feed.username}</Typography>
             </Stack>
-            <Typography component="div"  sx={{ mt: 2, fontSize: 16, lineHeight: 1.5 }}>{feed.content}</Typography>
+            <Typography component="div"  sx={{ mt: 2, fontSize: 16, lineHeight: 1.5 }} > <FeedContent text={feed.content} /> </Typography>
           </CardContent>
 
           {feed.files && feed.files.length > 0 && (
-            <Box sx={{ display: 'flex', borderTop: '1px solid #ddd', borderBottom: '1px solid #ddd', height: 400 }}>
+            <Box sx={{ display: 'flex', borderTop: '1px solid #ddd', borderBottom: '1px solid #ddd', height: 400 }} 
+            onClick={()=>{
+              openModalWithPostId(feed.postId);
+            }}>
               <Box sx={{ flex: 2, overflow: 'hidden' }}>
                 <img src={feed.files[0].filePath} alt="feed-main" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               </Box>
@@ -343,6 +358,13 @@ const FeedList = () => {
           </Box>
         </Card>
       ))}
+
+      <FeedDetailModal
+          open={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          postId={selectedPostId}
+      />
+      
     </Box>
   );
 };

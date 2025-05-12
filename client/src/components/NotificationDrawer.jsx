@@ -1,4 +1,3 @@
-// components/NotificationDrawer.jsx
 import React from 'react';
 import {
   Box, Toolbar, IconButton, List, ListItem, ListItemText
@@ -11,9 +10,23 @@ const NotificationDrawer = ({
   collapsedWidth,
   notificationDrawerOpen,
   toggleNotificationDrawer,
+  handleNotificationClick,
   notifications,
-  handleNotificationClick
+  handleDmClick,             // ✅ 추가: DM 클릭 처리 함수
+  handleFeedModalOpen        // ✅ 추가: 피드 모달 열기 함수
 }) => {
+  // 알림 클릭 핸들러
+  const onNotificationClick = (notification) => {
+
+    handleNotificationClick(notification.id); // 🔹 읽음 처리 호출
+
+    if (notification.type === 'dm') {
+      handleDmClick(notification.relatedFeedId);
+    } else {
+      handleFeedModalOpen(notification.relatedFeedId);
+    }
+  };
+
   return (
     <Box
       sx={{
@@ -48,7 +61,7 @@ const NotificationDrawer = ({
             <ListItem
               key={idx}
               button
-              onClick={() => handleNotificationClick(item.id)}
+              onClick={() => onNotificationClick(item)}
               sx={{
                 bgcolor: item.isRead === 1 ? 'inherit' : 'rgba(25, 118, 210, 0.1)',
               }}

@@ -6,6 +6,7 @@ import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import CloseIcon from '@mui/icons-material/Close';
+import FeedContent from './FeedContent';
 
 
 export default function FeedDetailModal({ open, onClose, postId }) {
@@ -240,7 +241,7 @@ export default function FeedDetailModal({ open, onClose, postId }) {
 
         {/* 게시글 내용 */}
         <Box mt={2}>
-          <Typography variant="body2">{post.content}</Typography>
+          <Typography variant="body2"><FeedContent text={post.content} /></Typography>
         </Box>
 
         {/* 좋아요 및 댓글 버튼 */}

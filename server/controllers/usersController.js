@@ -147,3 +147,21 @@ exports.getUserSearch = async (req, res) => {
     res.status(500).json({ message: '서버 오류' });
   }
 };
+
+exports.getUserId = async (req, res) => {
+  const { username } = req.params;
+
+  try {
+    const [rows] = await db.query('SELECT id FROM tbl_users WHERE username = ?', [username]);
+
+    if (rows.length === 0) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.json({ id: rows[0].id });
+  } catch (err) {
+    console.error('Error fetching user ID by username:', err);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+

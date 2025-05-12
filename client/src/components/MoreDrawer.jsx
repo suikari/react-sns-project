@@ -10,7 +10,7 @@ import {
   Toolbar,
 } from '@mui/material';
 import {  Brightness4, Brightness7, Logout, AccountCircle, Close } from '@mui/icons-material';
-import { Link } from 'react-router-dom';
+import { Link  , useNavigate } from 'react-router-dom';
 import { useEffect, useRef } from 'react';
 import { DarkModeContext } from '../context/DarkModeContext';
 import { useContext } from 'react';
@@ -22,6 +22,7 @@ function MoreMenuDrawer({ anchorEl, open, onClose }) {
   const drawerRef = useRef();
   const value = useContext(DarkModeContext);
 
+  const navigate = useNavigate(); // useNavigate 훅을 사용하여 navigate 함수 호출
   
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -73,14 +74,14 @@ function MoreMenuDrawer({ anchorEl, open, onClose }) {
         </ListItem>
 
         <ListItem button onClick={() => {
-          localStorage.removeItem('token');
-          window.location.href = '/login';
+              localStorage.removeItem('token');
+              navigate('/login');
         }}>
           <ListItemIcon><Logout /></ListItemIcon>
           <ListItemText primary="로그아웃" />
         </ListItem>
 
-        <ListItem button onClick={() => value.setDarkMode(!value.darkMode)}>
+        <ListItem button onClick={() => value.setDarkMode(!value.darkMode)} >
         <ListItemIcon>
             {value.darkMode ? <Brightness7 /> : <Brightness4 />}
         </ListItemIcon>

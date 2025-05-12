@@ -32,6 +32,7 @@ import { DarkModeContext } from "../context/DarkModeContext";
 import NotificationDrawer from './NotificationDrawer';
 import MoreMenuDrawer from './MoreDrawer';
 import SearchDrawer from './SearchDrawer';
+import FeedDetailModal from '../pages/FeedDetailModal'; 
 
 const drawerWidth = 240;
 const collapsedWidth = 60;
@@ -46,18 +47,45 @@ function Menu() {
   const moreButtonRef = useRef(null);
 
   const [searchDrawerOpen, setSearchDrawerOpen] = useState(false);
-  const toggleSearchDrawer = () => setSearchDrawerOpen(prev => !prev);
 
   const value = useContext(DarkModeContext);
   const navigate = useNavigate(); // useNavigate 훅을 사용하여 navigate 함수 호출
 
   const toggleDrawer = () => setOpen(!open);
 
-  const toggleNotificationDrawer = () => setNotificationDrawerOpen(prev => !prev);
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    navigate('/login');
+  const [selectedPostId, setSelectedPostId] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const openModalWithPostId = (postId) => {
+    setSelectedPostId(postId);
+    setIsModalOpen(true);
+  };
+
+  
+  const closeAllDrawersAndModals = () => {
+    setNotificationDrawerOpen(false);
+    setMoreMenuOpen(false);
+    setSearchDrawerOpen(false);
+    setIsModalOpen(false);
+  };
+
+
+  const toggleNotificationDrawer = () => setNotificationDrawerOpen(prev => !prev);
+  const handleNotificationToggle = () => {
+    closeAllDrawersAndModals(); // 먼저 다 닫고
+    setNotificationDrawerOpen(prev => !prev); // 알림창만 토글
+  };
+  
+  const toggleSearchDrawer = () => setSearchDrawerOpen(prev => !prev);
+  const handleSearchToggle = () => {
+    closeAllDrawersAndModals();
+    setSearchDrawerOpen(prev => !prev);
+  };
+  
+  const handleMoreMenuToggle = () => {
+    closeAllDrawersAndModals();
+    setMoreMenuOpen(prev => !prev);
   };
 
   
@@ -65,7 +93,7 @@ function Menu() {
     const token = localStorage.getItem('token');
 
     try {
-
+      console.log('test33','2342342');
       // 서버에 읽음 처리 요청
       await axios.post(`http://localhost:3003/api/notifications/${id}/read`,{},{
         headers: { Authorization: `Bearer ${token}` },
@@ -84,6 +112,30 @@ function Menu() {
       console.error('알림 읽음 처리 실패:', err);
     }
   };
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+  
+    const fetchNotifications = async () => {
+      try {
+        const res = await axios.get('http://localhost:3003/api/notifications', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setNotifications(res.data);
+      } catch (err) {
+        console.error('알림 가져오기 실패:', err);
+      }
+    };
+  
+    // 처음 로드 시 한 번 실행
+    fetchNotifications();
+  
+    // 30초마다 알림 갱신
+    const interval = setInterval(fetchNotifications, 10000);
+  
+    // cleanup
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     //if (notificationDrawerOpen) {
@@ -127,28 +179,28 @@ function Menu() {
 
         <List>
           <Tooltip title="피드" placement="right" disableHoverListener={open}>
-            <ListItem button component={Link} to="/">
+            <ListItem button component={Link} to="/" onClick={closeAllDrawersAndModals}>
               <ListItemIcon><Home /></ListItemIcon>
               {open && <ListItemText primary="피드" />}
             </ListItem>
           </Tooltip>
 
           <Tooltip title="등록" placement="right" disableHoverListener={open}>
-            <ListItem button component={Link} to="/register">
+            <ListItem button component={Link} to="/register" onClick={closeAllDrawersAndModals}>
               <ListItemIcon><Add /></ListItemIcon>
               {open && <ListItemText primary="등록" />}
             </ListItem>
           </Tooltip>
 
-          <Tooltip title="마이페이지" placement="right" disableHoverListener={open}>
-            <ListItem button component={Link} to="/mypage">
+          <Tooltip title="마이페이지" placement="right" disableHoverListener={open} >
+            <ListItem button component={Link} to="/mypage" onClick={closeAllDrawersAndModals}>
               <ListItemIcon><AccountCircle /></ListItemIcon>
               {open && <ListItemText primary="마이페이지" />}
             </ListItem>
           </Tooltip>
 
           <Tooltip title="알림" placement="right" disableHoverListener={open}>
-            <ListItem button onClick={toggleNotificationDrawer}>
+            <ListItem button onClick={handleNotificationToggle}>
               <ListItemIcon>
                 <Badge badgeContent={notifications.filter(n => n.isRead == 0).length} color="error">
                   <Notifications />
@@ -159,21 +211,21 @@ function Menu() {
           </Tooltip>
 
           <Tooltip title="검색" placement="right" disableHoverListener={open}>
-            <ListItem button onClick={toggleSearchDrawer}>
+            <ListItem button onClick={handleSearchToggle}>
               <ListItemIcon><Search /></ListItemIcon>
               {open && <ListItemText primary="검색" />}
             </ListItem>
           </Tooltip>
 
-          <Tooltip title="메시지" placement="right" disableHoverListener={open}>
-            <ListItem button component={Link} to="/messages">
+          <Tooltip title="메시지" placement="right" disableHoverListener={open} >
+            <ListItem button component={Link} to="/messages" onClick={closeAllDrawersAndModals}>
               <ListItemIcon><MailOutline /></ListItemIcon>
               {open && <ListItemText primary="메시지" />}
             </ListItem>
           </Tooltip>
        
           <Tooltip title="더보기" placement="right" disableHoverListener={open}>
-            <ListItem button ref={moreButtonRef} onClick={() => setMoreMenuOpen(prev => !prev)}>
+            <ListItem button ref={moreButtonRef} onClick={handleMoreMenuToggle}>
               <ListItemIcon><MenuIcon /></ListItemIcon>
               {open && <ListItemText primary="더보기" />}
             </ListItem>
@@ -191,6 +243,15 @@ function Menu() {
         toggleNotificationDrawer={toggleNotificationDrawer}
         notifications={notifications}
         handleNotificationClick={handleNotificationClick}
+        handleDmClick={(roomId) => {
+          // 예: 메시지 탭 열기 또는 특정 DM 페이지로 이동
+          navigate(`/messages/${roomId}`);
+        }}
+        handleFeedModalOpen={(feedId) => {
+          // 예: 피드 모달 열기
+          openModalWithPostId(feedId);
+
+        }}
       />
 
       <MoreMenuDrawer
@@ -211,6 +272,13 @@ function Menu() {
       <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
         {/* 메인 콘텐츠 렌더링 영역 */}
       </Box>
+
+      <FeedDetailModal
+          open={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          postId={selectedPostId}
+      />
+
     </Box>
   );
 }

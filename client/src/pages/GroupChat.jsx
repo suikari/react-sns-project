@@ -16,6 +16,11 @@ import {
 } from '@mui/material';
 import io from 'socket.io-client';
 import axios from 'axios';
+import { useParams } from 'react-router-dom';
+
+import { Avatar } from '@mui/material';
+import Slider from 'react-slick';
+import { jwtDecode } from 'jwt-decode';
 
 const socket = io('http://localhost:3003');
 
@@ -24,7 +29,7 @@ const GroupChatPage = () => {
   const [currentRoomId, setCurrentRoomId] = useState(null);
   const [messages, setMessages] = useState([]);
   const [inputMsg, setInputMsg] = useState('');
-  const [currentUserId] = useState(1); // JWT에서 추출 예정
+  const [currentUserId, setUserid] = useState(1); // JWT에서 추출 예정
   const [unreadCounts, setUnreadCounts] = useState({});
   const [openCreateDialog, setOpenCreateDialog] = useState(false);
   const [newRoomName, setNewRoomName] = useState('');
@@ -32,18 +37,51 @@ const GroupChatPage = () => {
   const messagesEndRef = useRef(null);
 
 
+  const [followedUsers, setFollowedUsers] = useState([]);
+
+
+
   const token = localStorage.getItem('token') ||  '';
 
   // 채팅방 불러오기
   useEffect(() => {
-    fetchChatRooms();
+
+    if (!token) return;
+    try {
+      const decoded = jwtDecode(token);
+      const userId = decoded.id;
+      setUserid(decoded.id);
+      axios
+        .get(`http://localhost:3003/api/users/following/${userId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        .then((res) => {
+          setFollowedUsers(res.data);
+          fetchChatRooms();
+        })
+        .catch((err) => console.error('팔로잉 유저 불러오기 실패:', err));
+    } catch (err) {
+      console.error('토큰 디코딩 실패:', err);
+    }
+    
+
   }, []);
 
+  const { roomId } = useParams();
+
+  useEffect(() => {
+    if (roomId) {
+      setCurrentRoomId(parseInt(roomId)); // 문자열을 숫자로 변환
+    }
+  }, [roomId]);
+  
   const fetchChatRooms = async () => {
     try {
       const res = await axios.get('http://localhost:3003/api/chat/rooms', {
         headers: { Authorization: `Bearer ${token}` },
       });
+
+      console.log(res.data);
       setChatRooms(res.data);
       // 초기 안읽은 메시지 수 설정
       const counts = {};
@@ -68,6 +106,7 @@ const GroupChatPage = () => {
       })
       .then((res) => {
         setMessages(res.data);
+        console.log(res.data);
         // 읽음 처리
         socket.emit('markAsRead', { roomId: currentRoomId, userId: currentUserId });
         setUnreadCounts((prev) => ({ ...prev, [currentRoomId]: 0 }));
@@ -77,6 +116,17 @@ const GroupChatPage = () => {
   // 수신 메시지 처리
   useEffect(() => {
     socket.on('receiveMessage', (msg) => {
+
+      setChatRooms((prev) => {
+        const updated = [...prev];
+        const index = updated.findIndex((room) => room.id === msg.roomId);
+        if (index !== -1) {
+          const [room] = updated.splice(index, 1);
+          updated.unshift(room); // 맨 앞으로 이동
+        }
+        return updated;
+      });
+
       if (msg.roomId === currentRoomId) {
         setMessages((prev) => [...prev, msg]);
         // 읽음 처리
@@ -90,7 +140,7 @@ const GroupChatPage = () => {
     });
 
     return () => socket.off('receiveMessage');
-  }, [currentRoomId]);
+  }, [currentRoomId, currentUserId]);
 
   // 스크롤 하단 이동
   useEffect(() => {
@@ -121,6 +171,7 @@ const GroupChatPage = () => {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
+      
       setChatRooms((prev) => [...prev, res.data]);
       setOpenCreateDialog(false);
       setNewRoomName('');
@@ -130,33 +181,101 @@ const GroupChatPage = () => {
     }
   };
 
+
+  const handleFollowUserClick = async (targetUserId) => {
+    try {
+      const res = await axios.post(
+        'http://localhost:3003/api/chat/direct',
+        { targetUserId },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      const room = res.data;
+      console.log("44",res.data);
+      console.log("chat",chatRooms);
+      // 이미 목록에 없으면 추가
+      if (!chatRooms.find((r) => r.roomId === room.id)) {
+        setChatRooms((prev) => [...prev, room]);
+      }
+      setCurrentRoomId(room.id); // 이동
+    } catch (err) {
+      console.error('DM 생성 실패:', err);
+    }
+  };
+
+  const toggleUser = (id) => {
+    setInviteUserIds((prev) =>
+      prev.includes(id) ? prev.filter((uid) => uid !== id) : [...prev, id]
+    );
+  };
+  
   return (
     <Box display="flex" height="90vh" p={2}>
       {/* 사이드바 - 채팅방 목록 */}
       <Paper sx={{ width: 250, mr: 2, p: 1 }}>
+        {/* 👇 팔로잉 사용자 슬라이더 */}
+        <Box mb={2}>
+          <Slider
+            dots={false}
+            infinite={false}
+            speed={300}
+            slidesToShow={4}
+            slidesToScroll={2}
+            swipeToSlide
+            arrows={false}
+          >
+            {followedUsers.map((user) => (
+              <Box
+                key={user.id}
+                textAlign="center"
+                px={0.5}
+                sx={{ cursor: 'pointer' }}
+                onClick={() => handleFollowUserClick(user.id)}
+              >
+                <Avatar
+                  src={user.profileImage || '/images/default-profile.jpg'}
+                  sx={{ width: 40, height: 40, mx: 'auto', mb: 0.5 }}
+                />
+                <Typography variant="caption" noWrap>
+                  {user.username}
+                </Typography>
+              </Box>
+            ))}
+          </Slider>
+        </Box>
+
+        {/* 채팅방 목록 */}
         <Box display="flex" justifyContent="space-between" alignItems="center">
           <Typography variant="h6" gutterBottom>
             채팅방
           </Typography>
-          <Button size="small" onClick={() => setOpenCreateDialog(true)}>
+          {/* <Button size="small" onClick={() => setOpenCreateDialog(true)}>
             +
-          </Button>
+          </Button> */}
         </Box>
         <List>
-          {chatRooms.map((room) => (
+        {chatRooms.map((room) => {
+          const isGroupChat = room.participants.length > 2;
+          const roomName = isGroupChat ? "그룹 채팅" : `${room.participants[0].username}님과의 1:1 채팅`;
+
+          return (
             <ListItemButton
-              key={room.id}
-              selected={currentRoomId === room.id}
-              onClick={() => setCurrentRoomId(room.id)}
+              key={room.roomId}
+              selected={currentRoomId === room.roomId}
+              onClick={() => setCurrentRoomId(room.roomId)}
             >
-              <ListItemText primary={room.roomName} />
-              {unreadCounts[room.id] > 0 && (
-                <Badge color="secondary" badgeContent={unreadCounts[room.id]} />
+              <ListItemText 
+                primary={roomName}  // 1:1 채팅 또는 그룹 채팅으로 표시
+                secondary={isGroupChat ? `참여자: ${room.participants.map(p => p.username).join(', ')}` : null}
+              />
+              {unreadCounts[room.roomId] > 0 && (
+                <Badge color="secondary" badgeContent={unreadCounts[room.roomId]} />
               )}
             </ListItemButton>
-          ))}
-        </List>
+          );
+        })}
+      </List>
       </Paper>
+
 
       {/* 채팅창 */}
       <Paper sx={{ flex: 1, display: 'flex', flexDirection: 'column', p: 2 }}>
@@ -212,20 +331,31 @@ const GroupChatPage = () => {
         <DialogTitle>채팅방 생성</DialogTitle>
         <DialogContent>
           <TextField
-            autoFocus
             margin="dense"
             label="채팅방 이름"
             fullWidth
             value={newRoomName}
             onChange={(e) => setNewRoomName(e.target.value)}
           />
-          <TextField
-            margin="dense"
-            label="초대할 사용자 ID들 (쉼표로 구분)"
-            fullWidth
-            value={inviteUserIds}
-            onChange={(e) => setInviteUserIds(e.target.value)}
-          />
+
+          <Typography variant="subtitle1" sx={{ mt: 2 }}>
+            초대할 팔로우한 유저 선택
+          </Typography>
+          <List dense sx={{ maxHeight: 200, overflow: 'auto' }}>
+            {followedUsers.map((user) => (
+              <ListItemButton
+                key={user.id}
+                onClick={() => toggleUser(user.id)}
+                selected={inviteUserIds.includes(user.id)}
+              >
+                <Avatar
+                  src={user.profileImage || '/images/default-profile.jpg'}
+                  sx={{ width: 40, height: 40, mx: 'auto', mb: 0.5 }}
+                />
+                <ListItemText primary={user.username} />
+              </ListItemButton>
+            ))}
+          </List>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpenCreateDialog(false)}>취소</Button>
