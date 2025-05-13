@@ -198,3 +198,21 @@ exports.UpdateUser = async (req, res) => {
     res.status(500).json({ success: false, message: '프로필 업데이트 중 오류가 발생했습니다.' });
   }
 };
+
+exports.checkUsernameDuplicate = async (req, res) => {
+  const { username, id } = req.body; // 현재 로그인한 사용자의 ID와 새로 입력한 username
+
+  try {
+    const [rows] = await db.query(
+      'SELECT COUNT(*) AS count FROM tbl_users WHERE username = ? AND id != ?',
+      [username, id]
+    );
+
+    const isDuplicate = rows[0].count > 0;
+
+    res.json({ success: true, isDuplicate });
+  } catch (err) {
+    console.error('중복 확인 오류:', err);
+    res.status(500).json({ success: false, message: '서버 오류' });
+  }
+};

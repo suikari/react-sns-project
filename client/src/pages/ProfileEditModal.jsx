@@ -29,6 +29,16 @@ export default function ProfileEditModal({ open, onClose, user, onUpdate }) {
   };
 
   const handleSave = async () => {
+    const res = await axios.post('http://localhost:3003/api/users/check-username', {
+        username: username,
+        id: user.id, // 본인의 id 전달
+      });
+    
+      if (res.data.isDuplicate) {
+        alert('이미 존재하는 이름입니다.');
+        return;
+      } 
+
     const token = localStorage.getItem('token');
     const formData = new FormData();
     formData.append('username', username);

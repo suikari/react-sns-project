@@ -22,5 +22,7 @@ router.get('/getUserId/:username',userController.getUserId);
 
 router.put('/:id/profile', authMiddleware , upload.single('profileImage'), userController.UpdateUser);
 
+router.post('/check-username', userController.checkUsernameDuplicate);
+
 
 module.exports = router;
