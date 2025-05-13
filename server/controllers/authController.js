@@ -94,7 +94,7 @@ exports.signup = async (req, res) => {
   
       // JWT 발급
       const token = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET, {
-        expiresIn: '2h'
+        expiresIn: '9999h'
       });
   
       res.json({

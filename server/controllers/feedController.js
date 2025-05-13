@@ -10,6 +10,31 @@ function extractMentionedUserIds(content) {
 }
 
 
+function organizeComments(comments, userId) {
+  const commentMap = {};
+  const roots = [];
+
+  comments.forEach(comment => {
+    comment.replies = [];
+    comment.isOwnComment = comment.userId === userId;
+    commentMap[comment.commentId] = comment;
+  });
+
+  comments.forEach(comment => {
+    if (comment.parentId) {
+      const parent = commentMap[comment.parentId];
+      if (parent) {
+        parent.replies.push(comment);
+      }
+    } else {
+      roots.push(comment);
+    }
+  });
+
+  return roots;
+}
+
+
 exports.createPost = async (req, res) => {
     const { content, location, hashtags, deletedFiles } = req.body;
     
@@ -181,15 +206,17 @@ exports.createPost = async (req, res) => {
         );
         hashtags = hashtagRows;
       }
-      console.log("4343",posts,hashtags);
+      //console.log("4343",posts,hashtags);
       const postMap = posts.map(post => ({
         ...post,
         files: files.filter(file => file.postId === post.postId),
-        comments: comments.filter(comment => comment.postId === post.postId).map(comment => ({
-          ...comment,
-          isOwnComment: comment.userId === userId,
-        })),
-        hashtags: hashtags.filter(ht => ht.postId === post.postId).map(ht => ht.tag),
+        comments: organizeComments(
+          comments.filter(comment => comment.postId === post.postId),
+          userId
+        ),
+        hashtags: hashtags
+          .filter(tag => tag.postId === post.postId)
+          .map(tag => tag.tag),
       }));
   
       res.json(postMap);
@@ -206,6 +233,7 @@ exports.addComment = async (req, res) => {
   const { postId, content, parentId } = req.body;
   const userId = req.user.id; // JWT에서 사용자 ID를 가져옵니다.
 
+  console.log("test33",parentId);
   try {
     // 댓글 등록
     await db.execute(
@@ -470,7 +498,7 @@ exports.getPostById = async (req, res) => {
     // 3. 댓글 목록 조회
     const [commentRows] = await db.execute(
       `
-      SELECT c.commentId, c.content, c.createdAt, c.parentId, u.id , u.username, u.profileImage
+      SELECT c.postId, c.commentId, c.content, c.createdAt, c.parentId, u.id, u.username, u.profileImage
       FROM tbl_comment c
       JOIN tbl_users u ON c.userId = u.id
       WHERE c.postId = ?
@@ -478,13 +506,19 @@ exports.getPostById = async (req, res) => {
       [postId]
     );
 
-    // 댓글 목록을 본인 댓글인지 여부 추가
-    const comments = commentRows.map(comment => ({
-      ...comment,
-      isOwnComment: comment.userId === userId,
-    }));
+    post.comments = organizeComments(commentRows, userId);
 
-    post.comments = comments;
+    // 4. 해시태그 조회
+    const [hashtagRows] = await db.execute(
+      `
+      SELECT ph.postId, h.tag
+      FROM tbl_post_hashtag ph
+      JOIN tbl_hashtag h ON ph.hashtagId = h.hashtagId
+      WHERE ph.postId = ?`,
+      [postId]
+    );
+
+    post.hashtags = hashtagRows.map(row => row.tag);
 
     res.json(post);
   } catch (err) {
@@ -492,6 +526,7 @@ exports.getPostById = async (req, res) => {
     res.status(500).json({ message: '피드 상세 조회 실패' });
   }
 };
+
 
 exports.getUserLikedPosts = async (req, res) => {
   const userId = req.params.userId;

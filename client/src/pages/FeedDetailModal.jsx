@@ -1,5 +1,5 @@
 import { Box, Modal, Typography, Avatar, IconButton, Button, TextField } from '@mui/material';
-import { useEffect, useState } from 'react';
+import { useEffect, useState , useRef } from 'react';
 import axios from 'axios';
 import { useSwipeable } from 'react-swipeable';
 import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
@@ -7,6 +7,9 @@ import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import CloseIcon from '@mui/icons-material/Close';
 import FeedContent from './FeedContent';
+import { getTimeAgo } from '../utils/timeAgo'; // 경로는 프로젝트 구조에 맞게 수정
+import { jwtDecode } from "jwt-decode";
+import { useNavigate } from 'react-router-dom';
 
 
 export default function FeedDetailModal({ open, onClose, postId }) {
@@ -21,6 +24,8 @@ export default function FeedDetailModal({ open, onClose, postId }) {
   const [loadingComment, setLoadingComment] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const [showReplyForm, setShowReplyForm] = useState({}); // 각 댓글에 대해 대댓글 작성 폼을 토글할 상태
+  const currentUserIdRef = useRef(null);
+  const navigate = useNavigate(); // 페이지 이동을 위한 함수 리턴
 
   // fetchPost 함수
   const fetchPost = async () => {
@@ -36,6 +41,15 @@ export default function FeedDetailModal({ open, onClose, postId }) {
   };
 
   useEffect(() => {
+    let token = localStorage.getItem('token');
+    if (token != '') {
+      let dToken = jwtDecode(token) // 디코딩
+      currentUserIdRef.current = dToken.id;
+    } else {
+      alert('로그인 후 이용 바랍니다.');
+      navigate('/login');
+    }
+
     if (open && postId) {
       fetchPost(); // postId가 변경되거나 모달이 열릴 때마다 fetchPost 호출
     }
@@ -101,11 +115,13 @@ export default function FeedDetailModal({ open, onClose, postId }) {
 
     try {
       const token = localStorage.getItem('token');
+
       await axios.post(
-        'http://localhost:3003/api/feed/reply',
+        'http://localhost:3003/api/feed/comment',
         {
-          commentId,
+          postId: feedId,
           content: newReply,
+          parentId : commentId,
         },
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -205,6 +221,9 @@ export default function FeedDetailModal({ open, onClose, postId }) {
           <Typography variant="body1" fontWeight="bold">
             {post.username}
           </Typography>
+          <Typography variant="caption" sx={{ color: 'gray' }}>
+            {getTimeAgo(post.createdAt)}
+          </Typography>
         </Box>
 
         {/* 이미지 슬라이드 */}
@@ -244,6 +263,34 @@ export default function FeedDetailModal({ open, onClose, postId }) {
           <Typography variant="body2"><FeedContent text={post.content} /></Typography>
         </Box>
 
+        {/* 👉 해시태그 */}
+        {post.hashtags && post.hashtags.length > 0 && (
+            <Box
+              sx={{
+                mt: 1,
+                ml: '4px', // 아바타+간격(40px + spacing 8px)과 맞춤
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: 1,
+              }}
+            >
+              {post.hashtags.map((tag, index) => (
+                <Typography
+                  key={index}
+                  variant="body2"
+                  sx={{
+                    color: 'primary.main',
+                    cursor: 'pointer',
+                    '&:hover': { textDecoration: 'underline' },
+                  }}
+                  // onClick={() => handleHashtagClick(tag)}
+                >
+                  {tag}
+                </Typography>
+              ))}
+            </Box>
+          )}
+
         {/* 좋아요 및 댓글 버튼 */}
         <Box mt={2} display="flex" alignItems="center" gap={2}>
           <Typography
@@ -263,7 +310,8 @@ export default function FeedDetailModal({ open, onClose, postId }) {
             onClick={() => setShowComments((prev) => !prev)}
             sx={{ display: 'inline-flex', alignItems: 'center', fontWeight: 'bold' }}
           >
-            💬 댓글 {post.comments?.length || 0}개
+            💬 댓글 {post.comments ? post.comments.length + post.comments.reduce((sum, comment) => sum + (comment.replies?.length || 0), 0)  : 0}개 
+
           </Button>
         </Box>
         {/* 댓글 목록 */}
@@ -275,6 +323,9 @@ export default function FeedDetailModal({ open, onClose, postId }) {
                   <Avatar src={comment.profileImage} />
                   <Typography variant="body2" fontWeight="bold">
                     {comment.username}
+                  </Typography>
+                  <Typography variant="caption" sx={{ color: 'gray' }}>
+                    {getTimeAgo(comment.createdAt)}
                   </Typography>
                 </Box>
 
@@ -295,7 +346,7 @@ export default function FeedDetailModal({ open, onClose, postId }) {
                 )}
 
                 {/* 댓글 수정/삭제 버튼 (본인만) */}
-                {comment.id === post.userId && (  // 기존 조건 유지
+                {comment.id === currentUserIdRef.current && (  // 기존 조건 유지
                   <Box mt={1} sx={{ ml: 4 }}>
                     {editCommentId !== comment.commentId ? 
                       <Button onClick={() => {
@@ -324,13 +375,13 @@ export default function FeedDetailModal({ open, onClose, postId }) {
                 <Box mt={1}>
                   <Button
                     variant="outlined"
-                    onClick={() => toggleReplyForm(comment.id)}
+                    onClick={() => toggleReplyForm(comment.commentId)}
                     sx={{ fontSize: 12 }}
                   >
                     대댓글 작성
                   </Button>
 
-                  {showReplyForm[comment.id] && (
+                  {showReplyForm[comment.commentId] && (
                     <Box mt={1} sx={{ ml: 4 }}>
                       <TextField
                         value={newReply}
@@ -343,7 +394,7 @@ export default function FeedDetailModal({ open, onClose, postId }) {
                         rows={2}
                       />
                       <Button
-                        onClick={() => handleReplySubmit(postId, comment.id)}
+                        onClick={() => handleReplySubmit(postId, comment.commentId)}
                         variant="contained"
                         color="primary"
                         sx={{ mt: 1 }}
@@ -357,11 +408,14 @@ export default function FeedDetailModal({ open, onClose, postId }) {
 
                 {/* 대댓글 목록 */}
                 {comment.replies?.map((reply) => (
-                  <Box key={reply.commentId} mb={1} sx={{ ml: 6 }}>
+                  <Box key={reply.commentId} mb={1} sx={{ mt: 2, padding: 2,  borderRadius: 2 , ml: 4 }}>
                     <Box display="flex" alignItems="center" gap={2}>
-                      <Avatar src={reply.user?.profileImage} />
+                      <Avatar src={reply.profileImage} />
                       <Typography variant="body2" fontWeight="bold">
-                        {reply.user?.username}
+                        {reply.username}
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: 'gray' }}>
+                        {getTimeAgo(reply.createdAt)}
                       </Typography>
                     </Box>
                     <Typography variant="body2" sx={{ ml: 4 }}>
@@ -369,7 +423,7 @@ export default function FeedDetailModal({ open, onClose, postId }) {
                     </Typography>
 
                     {/* 대댓글 수정/삭제 버튼 (본인만) */}
-                    {reply.user?.id === post.userId && (
+                    {reply.id === currentUserIdRef.current && (
                       <Box mt={1} sx={{ ml: 4 }}>
                         <Button onClick={() => setEditReplyId(reply.id)} sx={{ fontSize: 12 }}>
                           수정
@@ -383,31 +437,37 @@ export default function FeedDetailModal({ open, onClose, postId }) {
                 ))}
               </Box>
             ))}
+
+
+            {/* 댓글 작성 폼 */}
+            <Box mt={2} display="flex" gap={2}>
+              <TextField
+                value={newComment}
+                onChange={(e) => setNewComment(e.target.value)}
+                placeholder="댓글을 입력하세요..."
+                fullWidth
+                variant="outlined"
+                size="small"
+                multiline
+                rows={2}
+              />
+              <Button
+                onClick={() => handleCommentSubmit(postId)}
+                variant="contained"
+                color="primary"
+                sx={{ mt: 1 }}
+                disabled={loadingComment}
+              >
+                {loadingComment ? '작성 중...' : '작성'}
+              </Button>
+            </Box>
+
           </Box>
+
+          
         )}
 
-        {/* 댓글 작성 폼 */}
-        <Box mt={2} display="flex" gap={2}>
-          <TextField
-            value={newComment}
-            onChange={(e) => setNewComment(e.target.value)}
-            placeholder="댓글을 입력하세요..."
-            fullWidth
-            variant="outlined"
-            size="small"
-            multiline
-            rows={2}
-          />
-          <Button
-            onClick={() => handleCommentSubmit(postId)}
-            variant="contained"
-            color="primary"
-            sx={{ mt: 1 }}
-            disabled={loadingComment}
-          >
-            {loadingComment ? '작성 중...' : '작성'}
-          </Button>
-        </Box>
+
       </Box>
     </Modal>
   );

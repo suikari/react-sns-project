@@ -13,6 +13,7 @@ import { useNavigate } from 'react-router-dom';
 import FollowedUserSlider from '../components/FollowedUserSlider';
 import FeedDetailModal from './FeedDetailModal'; 
 import FeedContent from './FeedContent';
+import { getTimeAgo } from '../utils/timeAgo';
 
 import "../styles/feedList.css";
 
@@ -25,6 +26,11 @@ const FeedList = () => {
   const [loadingComment, setLoadingComment] = useState(false);
   const [editCommentId, setEditCommentId] = useState(null);
   const [editedComment, setEditedComment] = useState('');
+  const [showReplyForm, setShowReplyForm] = useState({}); // 각 댓글에 대해 대댓글 작성 폼을 토글할 상태
+  const [newReply, setNewReply] = useState('');
+  const [editReplyId, setEditReplyId] = useState(null);
+
+  
   // const [currentUserId, setUserId] = useState("");
   // const [flag, setFlag] = useState(false);
   const currentUserIdRef = useRef(null);
@@ -64,7 +70,7 @@ const FeedList = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      console.log(res.data);
+      console.log("sing",res.data);
 
       setFeeds((prevFeeds) =>
         prevFeeds.map((feed) => (feed.postId === feedId ? res.data : feed))
@@ -188,6 +194,53 @@ const FeedList = () => {
   };
 
 
+  const toggleReplyForm = (commentId) => {
+    setShowReplyForm((prev) => ({ ...prev, [commentId]: !prev[commentId] }));
+  };
+
+  const handleReplySubmit = async (feedId, commentId) => {
+    if (!newReply.trim()) return;
+
+    try {
+      const token = localStorage.getItem('token');
+
+      await axios.post(
+        'http://localhost:3003/api/feed/comment',
+        {
+          postId: feedId,
+          content: newReply,
+          parentId : commentId,
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      setNewReply('');
+      fetchSingleFeed(feedId); // 새로고침
+    } catch (error) {
+      console.error('대댓글 작성 실패:', error);
+    }
+  };
+
+
+  const handleDeleteReply = async (feedId, replyId) => {
+    try {
+      if (!window.confirm('삭제하시면 복구할 수 없습니다. 정말로 삭제하시겠습니까?')) {
+        return;
+      }
+
+      const token = localStorage.getItem('token');
+      await axios.delete(`http://localhost:3003/api/feed/comment/${replyId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      fetchSingleFeed(feedId); // 새로고침
+    } catch (error) {
+      console.error('대댓글 삭제 실패:', error);
+    }
+  };
+
   if (loading) {
     return <Box sx={{ textAlign: 'center', mt: 4 }}><CircularProgress /></Box>;
   }
@@ -232,9 +285,43 @@ const FeedList = () => {
               }} sx={{cursor : 'pointer'}} >
               <Avatar src={feed.profileImage} sx={{ width: 40, height: 40 }} />
               <Typography  component="div" variant="subtitle1" sx={{ fontWeight: 'bold' }}>{feed.username}</Typography>
+              <Typography variant="caption" sx={{ color: 'gray' }}>
+                {getTimeAgo(feed.createdAt)}
+              </Typography>
             </Stack>
+
+
             <Typography component="div"  sx={{ mt: 2, fontSize: 16, lineHeight: 1.5 }} > <FeedContent text={feed.content} /> </Typography>
           </CardContent>
+
+          {/* 👉 해시태그 */}
+          {feed.hashtags && feed.hashtags.length > 0 && (
+              <Box
+                sx={{
+                  mt: 1,
+                  ml: '24px', // 아바타+간격(40px + spacing 8px)과 맞춤
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  gap: 1,
+                }}
+              >
+                {feed.hashtags.map((tag, index) => (
+                  <Typography
+                    key={index}
+                    variant="body2"
+                    sx={{
+                      color: 'primary.main',
+                      cursor: 'pointer',
+                      '&:hover': { textDecoration: 'underline' },
+                      mb : 1.5 ,
+                    }}
+                    // onClick={() => handleHashtagClick(tag)}
+                  >
+                    {tag}
+                  </Typography>
+                ))}
+              </Box>
+            )}
 
           {feed.files && feed.files.length > 0 && (
             <Box sx={{ display: 'flex', borderTop: '1px solid #ddd', borderBottom: '1px solid #ddd', height: 400 }} 
@@ -278,8 +365,9 @@ const FeedList = () => {
               <IconButton >
                 <CommentIcon />
               </IconButton>
-              {feed.comments ? feed.comments.length : 0}개
-            </Typography>
+              {feed.comments ? feed.comments.length + feed.comments.reduce((sum, comment) => sum + (comment.replies?.length || 0), 0)  : 0}개 
+             </Typography>
+
 
             {openComments[feed.postId] && (
               <Box sx={{ mt: 2, padding: 2,  borderRadius: 2 }}>
@@ -290,8 +378,11 @@ const FeedList = () => {
                       <Typography component="div"  variant="body2" sx={{ fontWeight: 'bold' }}>
                         {comment.username}
                       </Typography>
+                      <Typography variant="caption" sx={{ color: 'gray' }}>
+                        {getTimeAgo(comment.createdAt)}
+                      </Typography>
                     </Stack>
-                    <Typography component="div"  variant="body2" sx={{ ml: 2 }}>
+                    <Typography component="div"  variant="body2" sx={{ ml: 2 , mt : 1.5 , mb : 1 }}>
                       {editCommentId === comment.commentId ? (
                         <TextField
                           fullWidth
@@ -324,6 +415,71 @@ const FeedList = () => {
                       </IconButton>
                     </>
                     )}
+                    
+                    {/* 대댓글 작성 버튼 및 폼 토글 */}
+                    <Box mt={1}>
+                      <Button
+                        variant="outlined"
+                        onClick={() => toggleReplyForm(comment.commentId)}
+                        sx={{ fontSize: 12 }}
+                      >
+                        대댓글 작성
+                      </Button>
+    
+                      {showReplyForm[comment.commentId] && (
+                        <Box mt={1} sx={{ ml: 4 }}>
+                          <TextField
+                            value={newReply}
+                            onChange={(e) => setNewReply(e.target.value)}
+                            placeholder="대댓글을 입력하세요..."
+                            fullWidth
+                            variant="outlined"
+                            size="small"
+                            multiline
+                            rows={2}
+                          />
+                          <Button
+                            onClick={() => handleReplySubmit(comment.postId, comment.commentId)}
+                            variant="contained"
+                            color="primary"
+                            sx={{ mt: 1 }}
+                            disabled={loadingComment}
+                          >
+                            {loadingComment ? '작성 중...' : '작성'}
+                          </Button>
+                        </Box>
+                      )}
+                    </Box>
+    
+                    {/* 대댓글 목록 */}
+                    {comment.replies?.map((reply) => (
+                      <Box key={reply.commentId} mb={1} sx={{ mt: 2, padding: 2,  borderRadius: 2 , ml: 4 }}>
+                        <Box display="flex" alignItems="center" gap={2}>
+                          <Avatar src={reply.profileImage} />
+                          <Typography variant="body2" fontWeight="bold">
+                            {reply.username}
+                          </Typography>
+                          <Typography variant="caption" sx={{ color: 'gray' }}>
+                            {getTimeAgo(reply.createdAt)}
+                          </Typography>
+                        </Box>
+                        <Typography variant="body2" sx={{ ml: 4 }}>
+                          {reply.content}
+                        </Typography>
+    
+                        {/* 대댓글 수정/삭제 버튼 (본인만) */}
+                        {reply.id === currentUserIdRef.current && (
+                          <Box mt={1} sx={{ ml: 4 }}>
+                            <Button onClick={() => setEditReplyId(reply.commentId)} sx={{ fontSize: 12 }}>
+                              수정
+                            </Button>
+                            <Button onClick={() => handleDeleteReply(reply.postId,reply.commentId)} sx={{ fontSize: 12 }}>
+                              삭제
+                            </Button>
+                          </Box>
+                        )}
+                      </Box>
+                    ))}
                   </Box>
                 ))}
               </Box>

@@ -30,6 +30,7 @@ const feedRoutes = require('./routes/feedRoutes');
 const userRoutes = require('./routes/usersRouter')
 const chatRoutes = require('./routes/chatRoutes');
 const notiRoutes = require('./routes/notifications')
+const storyRoutes = require('./routes/storyRoutes')
 
 app.use(express.json());
 app.use(cors({
@@ -44,6 +45,7 @@ app.use('/api/feed', feedRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/notifications', notiRoutes);
+app.use('/api/story', storyRoutes);
 
 
 chatSocket(io);

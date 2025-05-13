@@ -33,6 +33,11 @@ import NotificationDrawer from './NotificationDrawer';
 import MoreMenuDrawer from './MoreDrawer';
 import SearchDrawer from './SearchDrawer';
 import FeedDetailModal from '../pages/FeedDetailModal'; 
+import CollectionsIcon from '@mui/icons-material/Collections';
+import AddPhotoAlternateIcon from '@mui/icons-material/AddPhotoAlternate';
+
+import StoryModal from './StoryModal';
+
 
 const drawerWidth = 240;
 const collapsedWidth = 60;
@@ -57,6 +62,9 @@ function Menu() {
   const [selectedPostId, setSelectedPostId] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  const [storyOpen, setStoryOpen] = useState(false);
+  const openStoryModal = () => setStoryOpen(true);
+
   const openModalWithPostId = (postId) => {
     setSelectedPostId(postId);
     setIsModalOpen(true);
@@ -73,19 +81,32 @@ function Menu() {
 
   const toggleNotificationDrawer = () => setNotificationDrawerOpen(prev => !prev);
   const handleNotificationToggle = () => {
-    closeAllDrawersAndModals(); // 먼저 다 닫고
-    setNotificationDrawerOpen(prev => !prev); // 알림창만 토글
+    if (notificationDrawerOpen) {
+      setNotificationDrawerOpen(false);
+    } else {
+      closeAllDrawersAndModals();
+      setNotificationDrawerOpen(true);
+    }
   };
   
   const toggleSearchDrawer = () => setSearchDrawerOpen(prev => !prev);
   const handleSearchToggle = () => {
-    closeAllDrawersAndModals();
-    setSearchDrawerOpen(prev => !prev);
+    if (searchDrawerOpen) {
+      // 검색창이 열려 있으면 닫기만 함
+      setSearchDrawerOpen(false);
+    } else {
+      closeAllDrawersAndModals();
+      setSearchDrawerOpen(true);
+    }
   };
   
   const handleMoreMenuToggle = () => {
-    closeAllDrawersAndModals();
-    setMoreMenuOpen(prev => !prev);
+    if (moreMenuOpen) {
+      setMoreMenuOpen(false);
+    } else {
+      closeAllDrawersAndModals();
+      setMoreMenuOpen(true);
+    }
   };
 
   
@@ -223,7 +244,17 @@ function Menu() {
               {open && <ListItemText primary="메시지" />}
             </ListItem>
           </Tooltip>
-       
+
+          <Tooltip title="스토리" placement="right" disableHoverListener={open}>
+            <ListItem button onClick={() => {
+              closeAllDrawersAndModals();
+              openStoryModal(); // 모달 여는 함수
+            }}>
+              <ListItemIcon><AddPhotoAlternateIcon /></ListItemIcon>
+              {open && <ListItemText primary="스토리" />}
+            </ListItem>
+          </Tooltip>     
+
           <Tooltip title="더보기" placement="right" disableHoverListener={open}>
             <ListItem button ref={moreButtonRef} onClick={handleMoreMenuToggle}>
               <ListItemIcon><MenuIcon /></ListItemIcon>
@@ -278,6 +309,8 @@ function Menu() {
           onClose={() => setIsModalOpen(false)}
           postId={selectedPostId}
       />
+
+      <StoryModal open={storyOpen} handleClose={() => setStoryOpen(false)} />
 
     </Box>
   );
