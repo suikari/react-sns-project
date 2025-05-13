@@ -29,7 +29,7 @@ const FeedList = () => {
   const [showReplyForm, setShowReplyForm] = useState({}); // 각 댓글에 대해 대댓글 작성 폼을 토글할 상태
   const [newReply, setNewReply] = useState('');
   const [editReplyId, setEditReplyId] = useState(null);
-
+  const [editedReplyContent, setEditedReplyContent] = useState('');
   
   // const [currentUserId, setUserId] = useState("");
   // const [flag, setFlag] = useState(false);
@@ -238,6 +238,30 @@ const FeedList = () => {
       fetchSingleFeed(feedId); // 새로고침
     } catch (error) {
       console.error('대댓글 삭제 실패:', error);
+    }
+  };
+
+  const handleEditReplySubmit = async (feedId , replyId) => {
+    try {
+
+      const token = localStorage.getItem('token');
+      await axios.put(
+        'http://localhost:3003/api/feed/comment',
+        {
+          commentId : replyId,
+          content: editedReplyContent,
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      // 수정 후 상태 초기화 및 최신 댓글 목록 다시 가져오기
+      setEditReplyId(null);
+      setEditedReplyContent('');
+      fetchSingleFeed(feedId); // 새로고침
+    } catch (err) {
+      console.error('대댓글 수정 실패:', err);
     }
   };
 
@@ -453,32 +477,61 @@ const FeedList = () => {
     
                     {/* 대댓글 목록 */}
                     {comment.replies?.map((reply) => (
-                      <Box key={reply.commentId} mb={1} sx={{ mt: 2, padding: 2,  borderRadius: 2 , ml: 4 }}>
-                        <Box display="flex" alignItems="center" gap={2}>
-                          <Avatar src={reply.profileImage} />
-                          <Typography variant="body2" fontWeight="bold">
-                            {reply.username}
-                          </Typography>
-                          <Typography variant="caption" sx={{ color: 'gray' }}>
-                            {getTimeAgo(reply.createdAt)}
-                          </Typography>
+                      <Box key={reply.commentId} mb={1} sx={{ mt: 2, padding: 2, borderRadius: 2, ml: 4 }}>
+                      <Box display="flex" alignItems="center" gap={2}>
+                        <Avatar src={reply.profileImage} />
+                        <Typography variant="body2" fontWeight="bold">
+                          {reply.username}
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: 'gray' }}>
+                          {getTimeAgo(reply.createdAt)}
+                        </Typography>
+                      </Box>
+
+                      {/* 대댓글 수정 중일 때 / 아닐 때 분기 */}
+                      {editReplyId === reply.commentId ? (
+                        <Box sx={{ ml: 4 }}>
+                          <TextField
+                            value={editedReplyContent}
+                            onChange={(e) => setEditedReplyContent(e.target.value)}
+                            fullWidth
+                            multiline
+                            size="small"
+                          />
                         </Box>
+                      ) : (
                         <Typography variant="body2" sx={{ ml: 4 }}>
                           {reply.content}
                         </Typography>
-    
-                        {/* 대댓글 수정/삭제 버튼 (본인만) */}
-                        {reply.id === currentUserIdRef.current && (
-                          <Box mt={1} sx={{ ml: 4 }}>
-                            <Button onClick={() => setEditReplyId(reply.commentId)} sx={{ fontSize: 12 }}>
+                      )}
+
+                      {/* 대댓글 수정/삭제 버튼 (본인만) */}
+                      {reply.id === currentUserIdRef.current && (
+                        <Box mt={1} sx={{ ml: 4 }}>
+                          {editReplyId !== reply.commentId ? (
+                            <Button
+                              onClick={() => {
+                                setEditReplyId(reply.commentId);
+                                setEditedReplyContent(reply.content);
+                              }}
+                              sx={{ fontSize: 12 }}
+                            >
                               수정
                             </Button>
-                            <Button onClick={() => handleDeleteReply(reply.postId,reply.commentId)} sx={{ fontSize: 12 }}>
-                              삭제
+                          ) : (
+                            <Button
+                              onClick={() => handleEditReplySubmit(reply.postId, reply.commentId)}
+                              sx={{ fontSize: 12 }}
+                            >
+                              수정 완료
                             </Button>
-                          </Box>
-                        )}
-                      </Box>
+                          )}
+                          <Button onClick={() => handleDeleteReply(reply.commentId)} sx={{ fontSize: 12 }}>
+                            삭제
+                          </Button>
+                        </Box>
+                      )}
+                    </Box>
                     ))}
                   </Box>
                 ))}

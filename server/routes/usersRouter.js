@@ -3,6 +3,7 @@
 const express = require('express');
 const userController = require('../controllers/usersController');
 const authMiddleware = require('../middlewares/authMiddleware');
+const upload = require('../middlewares/upload'); 
 
 const router = express.Router();
 
@@ -19,7 +20,7 @@ router.get('/search/:keyword',authMiddleware,userController.getUserSearch);
 
 router.get('/getUserId/:username',userController.getUserId);
 
-
+router.put('/:id/profile', authMiddleware , upload.single('profileImage'), userController.UpdateUser);
 
 
 module.exports = router;

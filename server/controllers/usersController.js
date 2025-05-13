@@ -18,7 +18,7 @@ exports.searchUsers = async (req, res) => {
 exports.getUserInfo = async (req, res) => {
   try {
     const { userId } = req.params;
-    const user = await db.query('SELECT id, email, username, profileImage FROM tbl_users WHERE id = ?', [userId]);
+    const user = await db.query('SELECT id, email, username, introduce, profileImage FROM tbl_users WHERE id = ?', [userId]);
 
     if (user.length === 0) {
       return res.status(404).json({ message: 'User not found' });
@@ -165,3 +165,36 @@ exports.getUserId = async (req, res) => {
   }
 };
 
+// 프로필 업데이트
+exports.UpdateUser = async (req, res) => {
+  const userId = req.params.id;
+  const { username, intro } = req.body;
+  const profileImage = req.file ? `${process.env.SERVER_URL}/uploads/${req.file.filename}` : null;
+
+  try {
+    // 먼저 기존 사용자 정보 확인
+    const [users] = await db.execute('SELECT * FROM tbl_users WHERE id = ?', [userId]);
+    if (users.length === 0) {
+      return res.status(404).json({ success: false, message: '사용자를 찾을 수 없습니다.' });
+    }
+
+    // 프로필 이미지가 업로드되었을 경우에만 업데이트
+    let sql = `UPDATE tbl_users SET username = ?, introduce = ?`;
+    const params = [username, intro];
+
+    if (profileImage) {
+      sql += `, profileImage = ?`;
+      params.push(profileImage);
+    }
+
+    sql += ` WHERE id = ?`;
+    params.push(userId);
+
+    await  db.execute(sql, params);
+
+    res.json({ success: true, message: '프로필이 업데이트되었습니다.' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: '프로필 업데이트 중 오류가 발생했습니다.' });
+  }
+};

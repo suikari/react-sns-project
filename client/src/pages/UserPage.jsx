@@ -5,6 +5,7 @@ import { Avatar, Box, Tabs, Tab, Typography , Button } from '@mui/material';
 import { jwtDecode } from 'jwt-decode';
 import FeedDetailModal from './FeedDetailModal'; // 경로 확인
 import { Flag } from '@mui/icons-material';
+import ProfileEditModal from './ProfileEditModal'; // 추가
 
 export default function UserPage() {
   const params = useParams();
@@ -18,6 +19,8 @@ export default function UserPage() {
 
   const [value, setValue] = useState(0); // 탭 상태 관리
   const [isflag, setFlag] = useState(false); // 탭 상태 관리
+
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
   const navigate = useNavigate(); // 페이지 이동을 위한 함수 리턴
 
@@ -117,6 +120,10 @@ export default function UserPage() {
     }
   };
   
+  const handleFlag = async => {
+    setFlag(!isflag);
+  }
+
   const handleUnfollow = async (userId) => {
     const token = localStorage.getItem('token') || '';
 
@@ -140,24 +147,40 @@ export default function UserPage() {
         <Box flexGrow={1}>
           <Typography variant="h6" fontWeight="bold">{user.username}</Typography>
           <Typography variant="body2" color="text.secondary">{user.email}</Typography>
+
+            {/* 자기소개 */}
+            {user.introduce && (
+              <Typography 
+                variant="body2" 
+                sx={{ 
+                  color: 'text.secondary', 
+                  mt: 0.5, 
+                  fontStyle: 'italic',
+                  whiteSpace: 'pre-wrap',
+                }}
+              >
+                {user.introduce}
+              </Typography>
+            )}
+            
         </Box>
 
         {/* 본인 페이지가 아닌 경우에만 버튼 노출 */}
-        {currentId !== user.id && (
-          isFollowing ? (
-            <Button variant="outlined" color="secondary" onClick={()=>{
-              handleUnfollow(user.id);
-            }}>
-              언팔로우
+          {currentId === user.id ? (
+            <Button variant="outlined" onClick={() => setIsProfileModalOpen(true)}>
+              프로필 수정
             </Button>
           ) : (
-            <Button variant="contained" color="primary" onClick={()=>{
-              handleFollow(user.id);
-            }}>
-              팔로우
-            </Button>
-          )
-        )}
+            isFollowing ? (
+              <Button variant="outlined" color="secondary" onClick={() => handleUnfollow(user.id)}>
+                언팔로우
+              </Button>
+            ) : (
+              <Button variant="contained" color="primary" onClick={() => handleFollow(user.id)}>
+                팔로우
+              </Button>
+            )
+          )}
       </Box>
 
       <Box mt={2} display="flex" justifyContent="space-between">
@@ -345,6 +368,13 @@ export default function UserPage() {
         open={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         postId={selectedPostId}
+    />
+
+    <ProfileEditModal
+      open={isProfileModalOpen}
+      onClose={() => setIsProfileModalOpen(false)}
+      user={user}
+      onUpdate={handleFlag}
     />
 
     </Box>

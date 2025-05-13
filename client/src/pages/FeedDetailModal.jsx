@@ -19,14 +19,13 @@ export default function FeedDetailModal({ open, onClose, postId }) {
   const [editedComment, setEditedComment] = useState('');
   const [editCommentId, setEditCommentId] = useState(null);
   const [newReply, setNewReply] = useState('');
-  const [editedReply, setEditedReply] = useState('');
   const [editReplyId, setEditReplyId] = useState(null);
+  const [editedReplyContent, setEditedReplyContent] = useState('');
   const [loadingComment, setLoadingComment] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const [showReplyForm, setShowReplyForm] = useState({}); // 각 댓글에 대해 대댓글 작성 폼을 토글할 상태
   const currentUserIdRef = useRef(null);
   const navigate = useNavigate(); // 페이지 이동을 위한 함수 리턴
-
   // fetchPost 함수
   const fetchPost = async () => {
     if (!postId) return;
@@ -164,7 +163,7 @@ export default function FeedDetailModal({ open, onClose, postId }) {
       }
 
       const token = localStorage.getItem('token');
-      await axios.delete(`http://localhost:3003/api/feed/reply/${replyId}`, {
+      await axios.delete(`http://localhost:3003/api/feed/comment/${replyId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -189,6 +188,30 @@ export default function FeedDetailModal({ open, onClose, postId }) {
 
   const toggleReplyForm = (commentId) => {
     setShowReplyForm((prev) => ({ ...prev, [commentId]: !prev[commentId] }));
+  };
+
+  const handleEditReplySubmit = async (replyId) => {
+    try {
+
+      const token = localStorage.getItem('token');
+      await axios.put(
+        'http://localhost:3003/api/feed/comment',
+        {
+          commentId : replyId,
+          content: editedReplyContent,
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      // 수정 후 상태 초기화 및 최신 댓글 목록 다시 가져오기
+      setEditReplyId(null);
+      setEditedReplyContent('');
+      fetchPost(); // 댓글/대댓글 다시 불러오는 함수
+    } catch (err) {
+      console.error('대댓글 수정 실패:', err);
+    }
   };
 
   if (!post) return null;
@@ -408,32 +431,61 @@ export default function FeedDetailModal({ open, onClose, postId }) {
 
                 {/* 대댓글 목록 */}
                 {comment.replies?.map((reply) => (
-                  <Box key={reply.commentId} mb={1} sx={{ mt: 2, padding: 2,  borderRadius: 2 , ml: 4 }}>
-                    <Box display="flex" alignItems="center" gap={2}>
-                      <Avatar src={reply.profileImage} />
-                      <Typography variant="body2" fontWeight="bold">
-                        {reply.username}
-                      </Typography>
-                      <Typography variant="caption" sx={{ color: 'gray' }}>
-                        {getTimeAgo(reply.createdAt)}
-                      </Typography>
+                <Box key={reply.commentId} mb={1} sx={{ mt: 2, padding: 2, borderRadius: 2, ml: 4 }}>
+                  <Box display="flex" alignItems="center" gap={2}>
+                    <Avatar src={reply.profileImage} />
+                    <Typography variant="body2" fontWeight="bold">
+                      {reply.username}
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: 'gray' }}>
+                      {getTimeAgo(reply.createdAt)}
+                    </Typography>
+                  </Box>
+
+                  {/* 대댓글 수정 중일 때 / 아닐 때 분기 */}
+                  {editReplyId === reply.commentId ? (
+                    <Box sx={{ ml: 4 }}>
+                      <TextField
+                        value={editedReplyContent}
+                        onChange={(e) => setEditedReplyContent(e.target.value)}
+                        fullWidth
+                        multiline
+                        size="small"
+                      />
                     </Box>
+                  ) : (
                     <Typography variant="body2" sx={{ ml: 4 }}>
                       {reply.content}
                     </Typography>
+                  )}
 
-                    {/* 대댓글 수정/삭제 버튼 (본인만) */}
-                    {reply.id === currentUserIdRef.current && (
-                      <Box mt={1} sx={{ ml: 4 }}>
-                        <Button onClick={() => setEditReplyId(reply.id)} sx={{ fontSize: 12 }}>
+                  {/* 대댓글 수정/삭제 버튼 (본인만) */}
+                  {reply.id === currentUserIdRef.current && (
+                    <Box mt={1} sx={{ ml: 4 }}>
+                      {editReplyId !== reply.commentId ? (
+                        <Button
+                          onClick={() => {
+                            setEditReplyId(reply.commentId);
+                            setEditedReplyContent(reply.content);
+                          }}
+                          sx={{ fontSize: 12 }}
+                        >
                           수정
                         </Button>
-                        <Button onClick={() => handleDeleteReply(reply.id)} sx={{ fontSize: 12 }}>
-                          삭제
+                      ) : (
+                        <Button
+                          onClick={() => handleEditReplySubmit(reply.commentId)}
+                          sx={{ fontSize: 12 }}
+                        >
+                          수정 완료
                         </Button>
-                      </Box>
-                    )}
-                  </Box>
+                      )}
+                      <Button onClick={() => handleDeleteReply(reply.commentId)} sx={{ fontSize: 12 }}>
+                        삭제
+                      </Button>
+                    </Box>
+                  )}
+                </Box>
                 ))}
               </Box>
             ))}
