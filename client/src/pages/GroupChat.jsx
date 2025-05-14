@@ -123,10 +123,9 @@ const GroupChatPage = () => {
 
   useEffect(() => {
   if (hasMore && beforeMessageId === null && currentRoomId) {
-    console.log('초기화 완료 후 메시지 로딩');
-    
     console.log('load',currentRoomId);
     console.log('page',beforeMessageId);
+    console.log('초기화 완료 후 메시지 로딩');
 
 
     loadMessages();
