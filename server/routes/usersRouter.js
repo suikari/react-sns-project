@@ -12,6 +12,8 @@ router.get('/', userController.searchUsers);
 
 // 내가 팔로우한 사용자 조회
 router.get('/following/:userId', authMiddleware, userController.getFollowingUsers);
+router.get('/followingStory/:userId', authMiddleware, userController.getFollowingUsersWithStories);
+
 router.get('/:userId', userController.getUserInfo);
 router.post('/:userId/follow', authMiddleware , userController.followUser);
 router.delete('/:userId/unfollow', authMiddleware , userController.unfollowUser);
@@ -23,6 +25,8 @@ router.get('/getUserId/:username',userController.getUserId);
 router.put('/:id/profile', authMiddleware , upload.single('profileImage'), userController.UpdateUser);
 
 router.post('/check-username', userController.checkUsernameDuplicate);
+
+
 
 
 module.exports = router;

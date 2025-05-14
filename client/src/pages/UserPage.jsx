@@ -1,7 +1,7 @@
 import { useParams , useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import axios from 'axios';
-import { Avatar, Box, Tabs, Tab, Typography , Button } from '@mui/material';
+import { Avatar, Box, Tabs, Tab, Typography , Button , Modal } from '@mui/material';
 import { jwtDecode } from 'jwt-decode';
 import FeedDetailModal from './FeedDetailModal'; // 경로 확인
 import { Flag } from '@mui/icons-material';
@@ -17,6 +17,10 @@ export default function UserPage() {
   const [likes, setLikes] = useState([]);
   const [isFollowing, setIsFollowing] = useState(false);
 
+  const [openModal, setOpenModal] = useState(false);
+  const [modalTitle, setModalTitle] = useState("");
+  const [modalData, setModalData] = useState([]);
+
   const [value, setValue] = useState(0); // 탭 상태 관리
   const [isflag, setFlag] = useState(false); // 탭 상태 관리
 
@@ -25,6 +29,16 @@ export default function UserPage() {
   const navigate = useNavigate(); // 페이지 이동을 위한 함수 리턴
 
   
+  const handleOpenModal = (title, data) => {
+    setModalTitle(title);
+    setModalData(data);
+    setOpenModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setOpenModal(false);
+  };
+
   const [followInfo, setFollowInfo] = useState({
     followers: [],
     following: [],
@@ -184,15 +198,15 @@ export default function UserPage() {
       </Box>
 
       <Box mt={2} display="flex" justifyContent="space-between">
-        <Box>
+        <Box onClick={() => handleOpenModal("팔로워", followInfo.followers)} sx={{ cursor: "pointer" }}>
           <Typography variant="body2" fontWeight="bold">팔로워</Typography>
           <Typography variant="h6">{followInfo.followers.length}</Typography>
         </Box>
-        <Box>
+        <Box onClick={() => handleOpenModal("팔로잉", followInfo.following)} sx={{ cursor: "pointer" }}>
           <Typography variant="body2" fontWeight="bold">팔로잉</Typography>
           <Typography variant="h6">{followInfo.following.length}</Typography>
         </Box>
-        <Box>
+        <Box onClick={() => handleOpenModal("친구", followInfo.mutuals)} sx={{ cursor: "pointer" }}>
           <Typography variant="body2" fontWeight="bold">친구</Typography>
           <Typography variant="h6">{followInfo.mutuals.length}</Typography>
         </Box>
@@ -376,6 +390,45 @@ export default function UserPage() {
       user={user}
       onUpdate={handleFlag}
     />
+
+
+    <Modal open={openModal} onClose={handleCloseModal}>
+      <Box
+        sx={{
+          position: "absolute",
+          top: "50%",
+          left: "50%",
+          transform: "translate(-50%, -50%)",
+          width: 300,
+          bgcolor: "background.paper",
+          boxShadow: 24,
+          borderRadius: 2,
+          p: 2,
+          maxHeight: 400,
+          overflowY: "auto",
+        }}
+      >
+        <Typography variant="h6" mb={2} fontWeight="bold">
+          {modalTitle}
+        </Typography>
+        {modalData.map((u) => (
+          <Box
+            key={u.id}
+            display="flex"
+            alignItems="center"
+            mb={1}
+            sx={{ cursor: "pointer", "&:hover": { backgroundColor: "#f5f5f5", borderRadius: 1, p: 1 } }}
+            onClick={() => {
+              handleCloseModal();
+              navigate(`/userpage/${u.id}`);
+            }}
+          >
+            <Avatar src={u.profileImage} alt={u.username} sx={{ mr: 1 }} />
+            <Typography variant="body1">{u.username}</Typography>
+          </Box>
+        ))}
+      </Box>
+    </Modal>
 
     </Box>
   );

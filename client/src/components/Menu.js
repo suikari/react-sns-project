@@ -35,6 +35,8 @@ import SearchDrawer from './SearchDrawer';
 import FeedDetailModal from '../pages/FeedDetailModal'; 
 import CollectionsIcon from '@mui/icons-material/Collections';
 import AddPhotoAlternateIcon from '@mui/icons-material/AddPhotoAlternate';
+import FeedCreateModal from '../pages/FeedCreate';
+
 
 import StoryModal from './StoryModal';
 
@@ -63,6 +65,8 @@ function Menu() {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const [storyOpen, setStoryOpen] = useState(false);
+  const [feedopen, setFeedOpen] = useState(false);
+
   const openStoryModal = () => setStoryOpen(true);
 
   const openModalWithPostId = (postId) => {
@@ -76,6 +80,7 @@ function Menu() {
     setMoreMenuOpen(false);
     setSearchDrawerOpen(false);
     setIsModalOpen(false);
+    setFeedOpen(false);
   };
 
 
@@ -109,6 +114,15 @@ function Menu() {
     }
   };
 
+  const handleFeedToggle = () => {
+    console.log('234','22');
+    if (feedopen) {
+      setFeedOpen(false); // 피드 작성 모달 닫기
+    } else {
+      closeAllDrawersAndModals(); // 다른 모달/드로어 닫기
+      setFeedOpen(true); // 피드 작성 모달 열기
+    }
+  };
   
   const handleNotificationClick = async (id) => {
     const token = localStorage.getItem('token');
@@ -207,7 +221,8 @@ function Menu() {
           </Tooltip>
 
           <Tooltip title="등록" placement="right" disableHoverListener={open}>
-            <ListItem button component={Link} to="/register" onClick={closeAllDrawersAndModals}>
+            <ListItem button onClick={handleFeedToggle}>
+            {/* <ListItem button component={Link} to="/register" onClick={closeAllDrawersAndModals}> */}
               <ListItemIcon><Add /></ListItemIcon>
               {open && <ListItemText primary="등록" />}
             </ListItem>
@@ -311,6 +326,7 @@ function Menu() {
       />
 
       <StoryModal open={storyOpen} handleClose={() => setStoryOpen(false)} />
+      <FeedCreateModal open={feedopen} handleClose={handleFeedToggle} />
 
     </Box>
   );

@@ -74,7 +74,7 @@ function App() {
         <Routes>
           <Route path="/" element={<FeedList />} />
           <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<FeedCreate />} />
+          {/* <Route path="/register" element={<FeedCreate />} /> */}
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/mypage" element={<UserPage />} />
           <Route path="/userpage/:userId" element={<UserPage />} />

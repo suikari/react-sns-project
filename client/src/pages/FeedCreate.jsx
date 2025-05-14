@@ -1,14 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   TextField, Box, Stack, Typography, Chip, Button,
-  IconButton
+  IconButton, Modal
 } from '@mui/material';
 import PhotoCamera from '@mui/icons-material/PhotoCamera';
 import axios from 'axios';
 import DeleteIcon from '@mui/icons-material/Delete';
+import CloseIcon from '@mui/icons-material/Close';
 import { useNavigate } from 'react-router-dom';
 
-const FeedCreate = () => {
+const FeedCreate = ({ open, handleClose }) => {
   const [content, setContent] = useState('');
   const [files, setFiles] = useState([]);
   const [previewUrls, setPreviewUrls] = useState([]);
@@ -19,10 +20,12 @@ const FeedCreate = () => {
   const [isMentioning, setIsMentioning] = useState(false);
   const [mentionList, setMentionList] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
+  const [mentionPosition, setMentionPosition] = useState({ x: 0, y: 0 });
+  const [mentionQuery, setMentionQuery] = useState('');
+  const [cursorPosition, setCursorPosition] = useState(0);
 
   const textAreaRef = useRef(null);
-  const dropRef = useRef(null);
-  const navigate = useNavigate(); // 페이지 이동을 위한 함수 리턴
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -34,74 +37,77 @@ const FeedCreate = () => {
       }
     };
     fetchUsers();
-  }, []);
 
-  const handleChange = (e) => {
-    const newContent = e.target.value;
-    setContent(newContent);
-
-    const mentionText = newContent.split('@').pop().split(' ')[0];
-    if (mentionText.length > 0) {
-      setIsMentioning(true);
-      setMentionList(
-        users.filter((user) =>
-          user.username.toLowerCase().includes(mentionText.toLowerCase())
-        )
-      );
-    } else {
-      setIsMentioning(false);
+    if (open) {
+      setContent('');
+      setFiles([]);
+      setPreviewUrls([]);
+      setTags([]);
+      setTagInput('');
+      setLocation('');
       setMentionList([]);
     }
-  };
+  }, [open]);
 
-  const handleMentionSelect = (user) => {
-    setSelectedUser(user);
-    const updatedContent = content.slice(0, content.lastIndexOf('@')) + `@${user.username} `;
-    setContent(updatedContent);
-    setUsers((prevList) => prevList.filter((item) => item.username !== user.username));
-    setIsMentioning(false);
-  };
+  /* ② handleChange – 커서 바로 앞 멘션만 검사 -------------------- */
+  const handleChange = (e) => {
+    const value     = e.target.value;
+    const cursorPos = e.target.selectionStart;
+    setContent(value);
+    setCursorPosition(cursorPos);
 
-  const renderMentionedText = (text) => {
-    const regex = /@(\w+)/g;
-    const parts = [];
-    let lastIndex = 0;
+    const before     = value.slice(0, cursorPos);
+    const atIndex    = before.lastIndexOf('@');          // 직전 @
+    const mentionRaw = atIndex !== -1 ? before.slice(atIndex + 1) : '';
+    const validQuery = /^[\w가-힣]{1,20}$/.test(mentionRaw); // 한글/영문/숫자
 
-    text.replace(regex, (match, username, index) => {
-      if (index > lastIndex) {
-        parts.push(text.slice(lastIndex, index));
-      }
-      parts.push(
-        <span key={index} style={{ color: 'blue', fontWeight: 'bold' }}>
-          @{username}
-        </span>
+    if (atIndex !== -1 && validQuery) {
+      setMentionList(
+        users.filter(u =>
+          u.username.toLowerCase().includes(mentionRaw.toLowerCase())
+        )
       );
-      lastIndex = index + match.length;
-      return match;
-    });
+      setIsMentioning(true);
 
-    if (lastIndex < text.length) {
-      parts.push(text.slice(lastIndex));
+      // 자동완성 위치
+      setMentionPosition({
+        x: e.target.offsetLeft + cursorPos * 8,
+        y: e.target.offsetTop  + e.target.scrollTop + e.target.clientHeight
+      });
+    } else {
+      setIsMentioning(false);
     }
-
-    return parts;
   };
 
-  const calculateMentionBoxPosition = () => {
-    const textarea = textAreaRef.current;
-    const cursorPos = textarea.selectionStart;
-    const textBeforeCursor = content.slice(0, cursorPos);
-    const lastMentionIndex = textBeforeCursor.lastIndexOf('@');
-    if (lastMentionIndex === -1) return { top: 0, left: 0 };
 
-    const mentionWidth = textBeforeCursor.slice(lastMentionIndex).length * 8;
-    const textareaRect = textarea.getBoundingClientRect();
+const handleMentionSelect = (user) => {
+  const cursorPos = cursorPosition;
+  const before = content.slice(0, cursorPos);
+  const after = content.slice(cursorPos);
 
-    return {
-      top: textareaRect.top + textareaRect.height,
-      left: textareaRect.left + mentionWidth,
-    };
-  };
+  // '@'를 기준으로 나누어 멘션 배열을 만듬
+  const beforeAt = before.split('@');
+  
+  console.log('b',beforeAt);
+
+  // '@'가 여러 번 있는 경우 마지막 '@'만 처리할 수 있도록
+  const lastMentionPart = beforeAt[beforeAt.length - 1];
+  console.log('lb',lastMentionPart);
+
+  // 마지막 멘션이 공백이나 특수문자가 포함되면 처리하지 않음
+  if (/[\s@]/.test(lastMentionPart)) {
+    setIsMentioning(false);
+    return;
+  }
+
+  // 마지막 멘션을 사용자 이름으로 교체
+  const newContent = before.slice(0, before.lastIndexOf('@')) + `@${user.username} ` + after;
+
+  setContent(newContent);
+  setIsMentioning(false);
+};
+
+
 
   const handleTagInput = (e) => {
     if (e.key === 'Enter' || e.key === ',') {
@@ -170,14 +176,8 @@ const FeedCreate = () => {
       })
       .then(() => {
         alert('피드가 등록되었습니다.');
-        setContent('');
-        setFiles([]);
-        setPreviewUrls([]);
-        setTags([]);
-        setTagInput('');
-        setLocation('');
+        handleClose();
         navigate('/');
-
       })
       .catch((error) => {
         console.error('피드 등록 실패:', error);
@@ -186,135 +186,171 @@ const FeedCreate = () => {
   };
 
   return (
-    <Box sx={{ p: 3, border: '1px solid #ccc', borderRadius: 2}}>
-      <Typography variant="h6" sx={{ mb: 2 }}>피드 작성</Typography>
-
-      <TextField
-        ref={textAreaRef}
-        value={content}
-        onChange={handleChange}
-        placeholder="무슨 일이 있었나요?"
-        fullWidth
-        multiline
-        rows={4}
-        sx={{ mb: 2 }}
-      />
-
-      {isMentioning && mentionList.length > 0 && (
-        <Box sx={{
-          position: 'absolute',
-          top: calculateMentionBoxPosition().top,
-          left: calculateMentionBoxPosition().left,
-          backgroundColor: 'white',
-          boxShadow: 1,
-          width: '100%',
-          zIndex: 10,
-        }}>
-          {mentionList.map((user) => (
-            <Box
-              key={user.id}
-              sx={{
-                padding: 1,
-                cursor: 'pointer',
-                '&:hover': { backgroundColor: '#f0f0f0' },
-              }}
-              onClick={() => handleMentionSelect(user)}
-            >
-              {user.username}
-            </Box>
-          ))}
-        </Box>
-      )}
-
-      <TextField
-        label="위치"
-        fullWidth
-        value={location}
-        onChange={(e) => setLocation(e.target.value)}
-        sx={{ mb: 2 }}
-      />
-
-      <TextField
-        label="태그 입력 (쉼표 또는 Enter)"
-        value={tagInput}
-        onChange={(e) => setTagInput(e.target.value)}
-        onKeyDown={handleTagInput}
-        fullWidth
-        sx={{ mb: 2 }}
-      />
-
-      <Stack direction="row" spacing={1} sx={{ mb: 2, flexWrap: 'wrap' }}>
-        {tags.map((tag, idx) => (
-          <Chip
-            key={idx}
-            label={tag}
-            onDelete={() => setTags(tags.filter((_, i) => i !== idx))}
-          />
-        ))}
-      </Stack>
-
-      <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 2 }}>
-        <input
-          accept="image/*"
-          id="upload-files"
-          multiple
-          type="file"
-          hidden
-          onChange={handleFileChange}
-        />
-        <label htmlFor="upload-files">
-          <IconButton color="primary" component="span">
-            <PhotoCamera />
-          </IconButton>
-        </label>
-        <Typography variant="body2">{files.length}개의 이미지 선택됨</Typography>
-      </Stack>
-
+    <Modal
+      open={open}
+      onClose={handleClose}
+      sx={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        backdropFilter: 'blur(4px)',
+      }}
+    >
       <Box
-        ref={dropRef}
-        onDrop={handleDrop}
-        onDragOver={handleDragOver}
         sx={{
-          border: '2px dashed #aaa',
+          p: 3,
+          border: '1px solid #ccc',
           borderRadius: 2,
-          p: 2,
-          mb: 2,
-          textAlign: 'center',
-          color: '#888',
+          width: 700,
+          backgroundColor: 'white',
+          marginTop: '10vh',
+          position: 'relative',
         }}
       >
-        여기로 이미지 드래그 앤 드롭
-      </Box>
+        <IconButton
+          onClick={handleClose}
+          sx={{
+            position: 'absolute',
+            top: 10,
+            right: 10,
+            color: '#000',
+          }}
+        >
+          <CloseIcon />
+        </IconButton>
 
-      {previewUrls.length > 0 && (
-        <Stack direction="row" spacing={2} sx={{ mb: 2, overflowX: 'auto' }}>
-          {previewUrls.map((url, idx) => (
-            <Box key={idx} position="relative">
-              <img src={url} alt={`preview-${idx}`} style={{ width: 100, height: 100, objectFit: 'cover' }} />
-              <IconButton
-                size="small"
-                onClick={() => {
-                  setPreviewUrls(previewUrls.filter((_, i) => i !== idx));
-                  setFiles(files.filter((_, i) => i !== idx));
-                }}
+        <Typography variant="h6" sx={{ mb: 2 }}>피드 작성</Typography>
+
+        <TextField
+          ref={textAreaRef}
+          value={content}
+          onChange={handleChange}
+          placeholder="무슨 일이 있었나요?"
+          fullWidth
+          multiline
+          rows={4}
+          sx={{ mb: 2 }}
+        />
+
+        {isMentioning && mentionList.length > 0 && (
+          <Box
+            sx={{
+              position: 'absolute',
+              top: mentionPosition.y,
+              left: mentionPosition.x,
+              backgroundColor: 'white',
+              boxShadow: 1,
+              width: '200px',
+              zIndex: 10,
+              maxHeight: '200px',
+              overflowY: 'auto',
+            }}
+          >
+            {mentionList.map((user) => (
+              <Box
+                key={user.id}
                 sx={{
-                  position: 'absolute',
-                  top: 2,
-                  right: 2,
-                  boxShadow: 1,
+                  padding: 1,
+                  cursor: 'pointer',
+                  '&:hover': { backgroundColor: '#f0f0f0' },
                 }}
+                onClick={() => handleMentionSelect(user)}
               >
-                <DeleteIcon fontSize="small" />
-              </IconButton>
-            </Box>
+                {user.username}
+              </Box>
+            ))}
+          </Box>
+        )}
+
+        <TextField
+          label="위치"
+          fullWidth
+          value={location}
+          onChange={(e) => setLocation(e.target.value)}
+          sx={{ mb: 2 }}
+        />
+
+        <TextField
+          label="태그 입력 (쉼표 또는 Enter)"
+          value={tagInput}
+          onChange={(e) => setTagInput(e.target.value)}
+          onKeyDown={handleTagInput}
+          fullWidth
+          sx={{ mb: 2 }}
+        />
+
+        <Stack direction="row" spacing={1} sx={{ mb: 2, flexWrap: 'wrap' }}>
+          {tags.map((tag, idx) => (
+            <Chip
+              key={idx}
+              label={tag}
+              onDelete={() => setTags(tags.filter((_, i) => i !== idx))}
+            />
           ))}
         </Stack>
-      )}
 
-      <Button variant="contained" fullWidth onClick={handleSubmit}>
-        등록하기
-      </Button>
-    </Box>
+        <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 2 }}>
+          <input
+            accept="image/*"
+            id="upload-files"
+            multiple
+            type="file"
+            hidden
+            onChange={handleFileChange}
+          />
+          <label htmlFor="upload-files">
+            <IconButton color="primary" component="span">
+              <PhotoCamera />
+            </IconButton>
+          </label>
+          <Typography variant="body2">{files.length}개의 이미지 선택됨</Typography>
+        </Stack>
+
+        <Box
+          onDrop={handleDrop}
+          onDragOver={handleDragOver}
+          sx={{
+            border: '2px dashed #aaa',
+            borderRadius: 2,
+            p: 2,
+            mb: 2,
+            textAlign: 'center',
+            color: '#888',
+          }}
+        >
+          여기로 이미지 드래그 앤 드롭
+        </Box>
+
+        {previewUrls.length > 0 && (
+          <Stack direction="row" spacing={2} sx={{ mb: 2, overflowX: 'auto' }}>
+            {previewUrls.map((url, idx) => (
+              <Box key={idx} position="relative">
+                <img src={url} alt={`preview-${idx}`} style={{ width: 100, height: 100, objectFit: 'cover' }} />
+                <IconButton
+                  size="small"
+                  onClick={() => {
+                    setPreviewUrls(previewUrls.filter((_, i) => i !== idx));
+                    setFiles(files.filter((_, i) => i !== idx));
+                  }}
+                  sx={{
+                    position: 'absolute',
+                    top: 2,
+                    right: 2,
+                    boxShadow: 1,
+                  }}
+                >
+                  <DeleteIcon fontSize="small" />
+                </IconButton>
+              </Box>
+            ))}
+          </Stack>
+        )}
+
+        <Button variant="contained" fullWidth onClick={handleSubmit}>
+          등록하기
+        </Button>
+      </Box>
+    </Modal>
   );
 };
 

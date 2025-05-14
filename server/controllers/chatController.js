@@ -64,18 +64,37 @@ exports.getRooms = async (req, res) => {
   }
 };
 
-// 채팅방 메시지 목록
+// 메시지 목록 페이징
 exports.getMessages = async (req, res) => {
   const roomId = req.params.roomId;
+  const limit = parseInt(req.query.limit) || 20;
+  const beforeMessageId = req.query.beforeMessageId;
+
+  console.log(limit,beforeMessageId);
   try {
-    const [messages] = await db.query(
-      `SELECT m.id, m.content, m.createdAt, m.senderId, u.username, u.profileImage
-       FROM tbl_messages m
-       JOIN tbl_users u ON m.senderId = u.id
-       WHERE m.roomId = ?
-       ORDER BY m.createdAt ASC`,
-      [roomId]
-    );
+    let query = `
+      SELECT m.id, m.content, m.createdAt, m.senderId, m.fileUrl, m.fileType, m.isDeleted,
+             u.username, u.profileImage
+      FROM tbl_messages m
+      JOIN tbl_users u ON m.senderId = u.id
+      WHERE m.roomId = ? AND m.isDeleted = 0
+    `;
+    const params = [roomId];
+
+    // 특정 메시지 ID 이전 메시지만 불러오기
+    if (beforeMessageId) {
+      query += ' AND m.id < ?';
+      params.push(beforeMessageId);
+    }
+
+    query += ' ORDER BY m.id DESC LIMIT ?'; // DESC로 불러온 후 프론트에서 시간순 정렬
+    params.push(limit);
+
+    const [messages] = await db.query(query, params);
+
+    // 시간순 정렬 ASC (프론트에서 보기 좋게)
+    messages.reverse();
+
     res.json(messages);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -219,4 +238,64 @@ exports.createOrGetGroupChatRoom = async (req, res) => {
     console.error(err);
     res.status(500).json({ error: err.message });
   }
+};
+
+
+exports.readMessage = async (req, res) => {
+  const userId = req.user.id;
+  const { messageId } = req.body;
+
+  try {
+    await db.execute(
+      'INSERT IGNORE INTO tbl_message_reads (messageId, userId) VALUES (?, ?)',
+      [messageId, userId]
+    );
+    res.sendStatus(200);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+exports.deleteMessage = async (req, res) => {
+  const userId = req.user.id;
+  const { messageId } = req.params;
+
+  try {
+    // 보낸 사람만 삭제 가능
+    const [[msg]] = await db.query(
+      'SELECT senderId FROM tbl_messages WHERE id = ?',
+      [messageId]
+    );
+
+    if (!msg || msg.senderId !== userId) {
+      return res.status(403).json({ error: '삭제 권한이 없습니다.' });
+    }
+
+    await db.execute(
+      'UPDATE tbl_messages SET isDeleted = TRUE WHERE id = ?',
+      [messageId]
+    );
+
+    res.sendStatus(200);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+
+exports.fileUpload = (req, res) => {
+  const file = req.file;
+
+  if (!file) {
+    return res.status(400).json({ error: '파일이 업로드되지 않았습니다.' });
+  }
+
+  // 클라이언트가 접근할 수 있는 URL 경로
+  const fileUrl = `${process.env.SERVER_URL}/uploads/${file.filename}`;
+
+  res.json({
+    fileUrl,
+    fileName: file.originalname,
+    fileType: file.mimetype
+  });
 };

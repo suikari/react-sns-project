@@ -8,20 +8,28 @@ module.exports = (io) => {
       socket.join(roomId);
     });
 
-    socket.on('sendMessage', async ({ roomId, senderId, content }) => {
+    socket.on('sendMessage', async ({ roomId, senderId, content, fileUrl, fileType }) => {
       try {
         // 1. 메시지 저장
         await db.execute(
-          'INSERT INTO tbl_messages (roomId, senderId, content) VALUES (?, ?, ?)',
-          [roomId, senderId, content]
+          `INSERT INTO tbl_messages (roomId, senderId, content, fileUrl, fileType)
+          VALUES (?, ?, ?, ?, ?)`,
+          [roomId, senderId, content, fileUrl || null, fileType || null]
         );
 
         const createdAt = new Date();
 
         // 2. 메시지 실시간 전송
-        io.to(roomId).emit('receiveMessage', { roomId, senderId, content, createdAt });
+        io.to(roomId).emit('receiveMessage', {
+          roomId,
+          senderId,
+          content,
+          createdAt,
+          fileUrl,
+          fileType,
+        });
 
-        // 3. 채팅방의 참여자 중 나를 제외한 유저들에게 알림 저장
+        // 3. 채팅방 참여자 중 나를 제외한 유저들에게 알림 저장
         const [userRows] = await db.query(
           'SELECT userId FROM tbl_chat_room_users WHERE roomId = ? AND userId != ?',
           [roomId, senderId]
@@ -43,9 +51,9 @@ module.exports = (io) => {
           // 6. 최근 3분 이내 동일한 알림이 있는지 확인
           const [latest] = await db.execute(
             `SELECT message FROM tbl_notifications 
-             WHERE userId = ? AND type = 'dm' AND relatedFeedId = ?
-               AND message = ? AND createdAt >= NOW() - INTERVAL 3 MINUTE
-             ORDER BY createdAt DESC LIMIT 1`,
+            WHERE userId = ? AND type = 'dm' AND relatedFeedId = ?
+              AND message = ? AND createdAt >= NOW() - INTERVAL 3 MINUTE
+            ORDER BY createdAt DESC LIMIT 1`,
             [receiverId, roomId, message]
           );
 
@@ -55,7 +63,7 @@ module.exports = (io) => {
             // 7. 알림 저장
             await db.execute(
               `INSERT INTO tbl_notifications (userId, type, message, relatedFeedId)
-               VALUES (?, 'dm', ?, ?)`,
+              VALUES (?, 'dm', ?, ?)`,
               [receiverId, message, roomId]
             );
 
@@ -71,7 +79,6 @@ module.exports = (io) => {
         console.error('메시지 전송 에러:', err.message);
       }
     });
-
     socket.on('disconnect', () => {
       console.log('User disconnected:', socket.id);
     });

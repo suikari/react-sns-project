@@ -216,3 +216,102 @@ exports.checkUsernameDuplicate = async (req, res) => {
     res.status(500).json({ success: false, message: '서버 오류' });
   }
 };
+
+exports.getFollowingUsersWithStories = async (req, res) => {
+  const { userId } = req.params;
+
+  try {
+    // 본인 정보
+    const [selfRows] = await db.execute(
+      `
+      SELECT 
+        u.id AS userId,
+        u.username,
+        u.profileImage,
+        s.storyId,
+        s.mediaType,
+        s.mediaPath,
+        s.caption,
+        s.createdAt,
+        MAX(s.createdAt) OVER (PARTITION BY u.id) AS latestStoryTime,
+        CASE WHEN v.viewerId IS NOT NULL THEN TRUE ELSE FALSE END AS viewed
+      FROM tbl_users u
+      LEFT JOIN tbl_story s 
+        ON s.userId = u.id 
+        AND s.createdAt >= NOW() - INTERVAL 1 DAY
+      LEFT JOIN tbl_story_view v
+        ON v.storyId = s.storyId AND v.viewerId = ?
+      WHERE u.id = ? AND u.deleteYn = 'N'
+      ORDER BY IFNULL(latestStoryTime, 0) DESC
+      `,
+      [userId, userId]
+    );
+
+    // 팔로우 유저 정보
+    const [rows] = await db.execute(
+      `
+      SELECT 
+        u.id AS userId,
+        u.username,
+        u.profileImage,
+        s.storyId,
+        s.mediaType,
+        s.mediaPath,
+        s.caption,
+        s.createdAt,
+        MAX(s.createdAt) OVER (PARTITION BY u.id) AS latestStoryTime,
+        CASE WHEN v.viewerId IS NOT NULL THEN TRUE ELSE FALSE END AS viewed
+      FROM tbl_follow f
+      JOIN tbl_users u ON f.followedId = u.id
+      INNER JOIN tbl_story s 
+        ON s.userId = u.id 
+        AND s.createdAt >= NOW() - INTERVAL 1 DAY
+      LEFT JOIN tbl_story_view v
+        ON v.storyId = s.storyId AND v.viewerId = ?
+      WHERE f.followerId = ? AND u.deleteYn = 'N'
+      ORDER BY IFNULL(latestStoryTime, 0) DESC
+      `,
+      [userId, userId]
+    );
+
+    const mapUserStories = (rows) => {
+      const result = [];
+      const userMap = {};
+
+      rows.forEach(row => {
+        if (!userMap[row.userId]) {
+          userMap[row.userId] = {
+            userId: row.userId,
+            username: row.username,
+            profileImage: row.profileImage,
+            stories: [],
+          };
+          result.push(userMap[row.userId]);
+        }
+
+        if (row.storyId) {
+          userMap[row.userId].stories.push({
+            storyId: row.storyId,
+            mediaType: row.mediaType,
+            mediaPath: row.mediaPath,
+            caption: row.caption,
+            createdAt: row.createdAt,
+            viewed: !!row.viewed,
+          });
+        }
+      });
+
+      return result;
+    };
+
+    const selfData = mapUserStories(selfRows);
+    const followingData = mapUserStories(rows);
+
+    const result = [...selfData, ...followingData];
+    res.json(result);
+  } catch (err) {
+    console.error('팔로잉 유저 + 본인 스토리 조회 실패:', err);
+    res.status(500).json({ error: '서버 오류가 발생했습니다.' });
+  }
+};
+
