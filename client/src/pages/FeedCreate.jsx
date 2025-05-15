@@ -262,13 +262,13 @@ const handleMentionSelect = (user) => {
           </Box>
         )}
 
-        <TextField
+        {/* <TextField
           label="위치"
           fullWidth
           value={location}
           onChange={(e) => setLocation(e.target.value)}
           sx={{ mb: 2 }}
-        />
+        /> */}
 
         <TextField
           label="태그 입력 (쉼표 또는 Enter)"

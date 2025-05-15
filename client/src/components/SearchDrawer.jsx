@@ -7,6 +7,7 @@ import {
 import SearchIcon from '@mui/icons-material/Search';
 import CloseIcon from '@mui/icons-material/Close';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 const SearchDrawer = ({
   open,
@@ -18,6 +19,7 @@ const SearchDrawer = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate(); // useNavigate 훅을 사용하여 navigate 함수 호출
 
   useEffect(() => {
     const delayDebounce = setTimeout(() => {
@@ -94,7 +96,11 @@ const SearchDrawer = ({
           </ListItem>
         ) : (
           searchResults.map((user, idx) => (
-            <ListItem key={idx} alignItems="flex-start">
+            <ListItem onClick={()=>{
+                navigate('/userpage/'+user.id);
+                toggleSearchDrawer();             
+            }}
+            key={idx} alignItems="flex-start">
               <Avatar src={user.profileImage} alt={user.username} sx={{ mr: 2 }} />
               <Box>
                 <Typography variant="subtitle1" fontWeight="bold">
@@ -104,7 +110,7 @@ const SearchDrawer = ({
                   {user.email}
                 </Typography>
                 <Typography variant="caption" color={user.isFollowed ? 'primary.main' : 'text.disabled'}>
-                  {user.isFollowed ? '팔로우 중' : '팔로우 안 함'}
+                  {user.isFollowed ? '팔로우 중' : ''}
                 </Typography>
               </Box>
             </ListItem>

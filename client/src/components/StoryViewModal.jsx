@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
-import { Modal, Box, Typography, Avatar } from '@mui/material';
+import { Modal, Box, Typography, Avatar, IconButton } from '@mui/material';
+import CloseIcon from '@mui/icons-material/Close';
 import axios from 'axios';
 
 const StoryViewModal = ({ open, handleClose, user }) => {
@@ -7,7 +8,7 @@ const StoryViewModal = ({ open, handleClose, user }) => {
     if (user && user.stories.length > 0) {
       handleStoryView(user.stories[0]?.storyId);
     }
-  }, [user]); // ✅ user가 바뀔 때마다 체크
+  }, [user]);
 
   const handleStoryView = async (storyId) => {
     const token = localStorage.getItem('token');
@@ -21,44 +22,91 @@ const StoryViewModal = ({ open, handleClose, user }) => {
     }
   };
 
-  if (!user) return null; // ✅ useEffect 아래로 이동
+  if (!user) return null;
 
   return (
     <Modal open={open} onClose={handleClose}>
       <Box sx={{
-        width: 400, bgcolor: 'background.paper', p: 3,
-        position: 'absolute', top: '50%', left: '50%',
-        transform: 'translate(-50%, -50%)', borderRadius: 2
+        width: '100vw',
+        height: '100vh',
+        bgcolor: 'rgba(0, 0, 0, 0.9)',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        p: 2,
+        overflow: 'hidden', // 화면 밖으로 넘치지 않게
+        position: 'relative',
       }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-          <Avatar src={user.profileImage} sx={{ mr: 2 }} />
-          <Typography variant="h6">{user.username}의 스토리</Typography>
+        {/* 닫기 버튼 */}
+        <IconButton
+          onClick={handleClose}
+          sx={{
+            position: 'absolute',
+            top: 20,
+            right: 20,
+            color: '#fff',
+            zIndex: 10
+          }}
+        >
+          <CloseIcon fontSize="large" />
+        </IconButton>
+
+        {/* 유저 정보 */}
+        <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+          <Avatar src={user.profileImage} sx={{ width: 56, height: 56, mr: 2 }} />
+          <Typography variant="h5" color="white">
+            {user.username}의 스토리
+          </Typography>
         </Box>
 
+        {/* 스토리 미디어 */}
         {user.stories.map((story, idx) => (
-          <Box key={idx} sx={{ my: 2 }}>
+          <Box
+            key={idx}
+            sx={{
+              maxWidth: '90vw',
+              maxHeight: '70vh',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center'
+            }}
+          >
             {story.mediaType === 'image' ? (
               <img
                 src={story.mediaPath}
                 alt="story"
-                style={{ width: '100%', borderRadius: 8 }}
+                style={{
+                  maxWidth: '100%',
+                  maxHeight: '100%',
+                  objectFit: 'contain',
+                  borderRadius: 16
+                }}
               />
             ) : story.mediaType === 'video' ? (
               <video
                 src={story.mediaPath}
                 controls
-                style={{ width: '100%', borderRadius: 8 }}
+                autoPlay
+                style={{
+                  maxWidth: '100%',
+                  maxHeight: '100%',
+                  objectFit: 'contain',
+                  borderRadius: 16
+                }}
               />
             ) : (
               <Typography color="error">지원되지 않는 미디어 형식</Typography>
             )}
-            {story.caption && (
-              <Typography variant="body2" sx={{ mt: 1 }}>
-                {story.caption}
-              </Typography>
-            )}
           </Box>
         ))}
+
+        {/* 캡션 */}
+        {user.stories[0]?.caption && (
+          <Typography variant="h6" color="white" sx={{ mt: 2 }}>
+            {user.stories[0].caption}
+          </Typography>
+        )}
       </Box>
     </Modal>
   );

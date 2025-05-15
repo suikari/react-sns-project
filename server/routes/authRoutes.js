@@ -25,5 +25,11 @@ router.post('/verify-code', authController.verifyCode);
 router.post('/login', authController.login);
 router.post('/social', authController.socialLogin);
 
+
+router.post('/find-id', authController.findId);
+router.post('/send-reset-code', authController.sendResetCode);
+router.post('/verify-reset-code', authController.verifyResetCode);
+router.post('/reset-password', authController.resetPassword);
+
 module.exports = router;
 

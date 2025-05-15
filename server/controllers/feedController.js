@@ -1,6 +1,7 @@
 const db = require('../models/db'); // DB 연결
 require('dotenv').config();
-
+const fs = require('fs');
+const path = require('path');
 
 // 멘션 파싱 함수: @username, @123, @한글멘션 => ['username', '123', '한글멘션']
 function extractMentionedUserIds(content) {
@@ -143,88 +144,94 @@ exports.createPost = async (req, res) => {
     }
   };
 
-  exports.getAllPosts = async (req, res) => {
-    const userId = req.query.userId || req.user?.id;
-  
-    if (!userId) {
-      return res.status(400).json({ message: 'userId가 필요하거나 로그인이 필요합니다.' });
+exports.getAllPosts = async (req, res) => {
+  const userId = req.query.userId || req.user?.id;
+
+  if (!userId) {
+    return res.status(400).json({ message: 'userId가 필요하거나 로그인이 필요합니다.' });
+  }
+
+  const { filter } = req.query;
+  const limit = Number(req.query.limit) || 10;
+  const offset = Number(req.query.offset) || 0;
+
+  let query = `
+    SELECT p.*, u.username, u.profileImage,
+      (SELECT COUNT(*) FROM tbl_post_like WHERE postId = p.postId) AS likeCount,
+      (SELECT COUNT(*) FROM tbl_comment WHERE postId = p.postId) AS commentCount,
+      EXISTS(SELECT 1 FROM tbl_post_like WHERE postId = p.postId AND userId = ?) AS liked
+    FROM tbl_post p
+    JOIN tbl_users u ON p.userId = u.id
+  `;
+
+  let where = '';
+  const params = [userId];
+
+  if (filter === 'my') {
+    where = 'WHERE p.userId = ?';
+    params.push(userId);
+  } else if (filter === 'mention') {
+    query += ' JOIN tbl_mention m ON p.postId = m.postId';
+    where = 'WHERE m.mentionedUserId = ?';
+    params.push(userId);
+  }
+
+  query += ` ${where} ORDER BY p.createdAt DESC LIMIT ${limit} OFFSET ${offset}`;
+
+  try {
+    const [posts] = await db.execute(query, params);
+    const postIds = posts.map(p => p.postId);
+
+    let files = [], comments = [], hashtags = [];
+
+    if (postIds.length > 0) {
+      const placeholders = postIds.map(() => '?').join(',');
+
+      const [fileRows] = await db.execute(
+        `SELECT * FROM tbl_post_file WHERE postId IN (${placeholders})`,
+        postIds
+      );
+      files = fileRows;
+
+      const [commentRows] = await db.execute(
+        `SELECT c.postId, c.commentId, c.content, c.createdAt, c.parentId, u.id, u.username, u.profileImage
+         FROM tbl_comment c
+         JOIN tbl_users u ON c.userId = u.id
+         WHERE c.postId IN (${placeholders})
+         ORDER BY c.createdAt DESC`,
+        postIds
+      );
+      comments = commentRows;
+
+      const [hashtagRows] = await db.execute(
+        `SELECT ph.postId, h.tag
+         FROM tbl_post_hashtag ph
+         JOIN tbl_hashtag h ON ph.hashtagId = h.hashtagId
+         WHERE ph.postId IN (${placeholders})`,
+        postIds
+      );
+      hashtags = hashtagRows;
     }
-  
-    const { filter } = req.query;
-  
-    let query = `
-      SELECT p.*, u.username, u.profileImage,
-        (SELECT COUNT(*) FROM tbl_post_like WHERE postId = p.postId) AS likeCount,
-        (SELECT COUNT(*) FROM tbl_comment WHERE postId = p.postId) AS commentCount,
-        EXISTS(SELECT 1 FROM tbl_post_like WHERE postId = p.postId AND userId = ?) AS liked
-      FROM tbl_post p
-      JOIN tbl_users u ON p.userId = u.id
-    `;
-    let where = '';
-    const params = [userId];
-  
-    if (filter === 'my') {
-      where = 'WHERE p.userId = ?';
-      params.push(userId);
-    } else if (filter === 'mention') {
-      query += ' JOIN tbl_mention m ON p.postId = m.postId';
-      where = 'WHERE m.mentionedUserId = ?';
-      params.push(userId);
-    }
-  
-    query += ` ${where} ORDER BY p.createdAt DESC`;
-  
-    try {
-      const [posts] = await db.execute(query, params);
-      const postIds = posts.map(p => p.postId);
-  
-      let files = [], comments = [], hashtags = [];
-  
-      if (postIds.length > 0) {
-        const [fileRows] = await db.execute(
-          `SELECT * FROM tbl_post_file WHERE postId IN (${postIds.map(() => '?').join(',')})`,
-          postIds
-        );
-        files = fileRows;
-  
-        const [commentRows] = await db.execute(
-          `SELECT c.postId, c.commentId, c.content, c.createdAt, c.parentId, u.id, u.username, u.profileImage
-           FROM tbl_comment c
-           JOIN tbl_users u ON c.userId = u.id
-           WHERE c.postId IN (${postIds.map(() => '?').join(',')})
-           ORDER BY c.createdAt DESC`,
-          postIds
-        );
-        comments = commentRows;
-  
-        const [hashtagRows] = await db.execute(
-          `SELECT ph.postId, h.tag
-           FROM tbl_post_hashtag ph
-           JOIN tbl_hashtag h ON ph.hashtagId = h.hashtagId
-           WHERE ph.postId IN (${postIds.map(() => '?').join(',')})`,
-          postIds
-        );
-        hashtags = hashtagRows;
-      }
-      //console.log("4343",posts,hashtags);
-      const postMap = posts.map(post => ({
-        ...post,
-        files: files.filter(file => file.postId === post.postId),
-        comments: organizeComments(
-          comments.filter(comment => comment.postId === post.postId),
-          userId
-        ),
-        hashtags: hashtags
-          .filter(tag => tag.postId === post.postId)
-          .map(tag => tag.tag),
-      }));
-  
-      res.json(postMap);
-    } catch (err) {
-      console.error(err);
-      res.status(500).json({ message: '피드 조회 실패' });
-    }
-  };
+
+    const postMap = posts.map(post => ({
+      ...post,
+      files: files.filter(file => file.postId === post.postId),
+      comments: organizeComments(
+        comments.filter(comment => comment.postId === post.postId),
+        userId
+      ),
+      hashtags: hashtags
+        .filter(tag => tag.postId === post.postId)
+        .map(tag => tag.tag),
+    }));
+
+    res.json(postMap);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: '피드 조회 실패' });
+  }
+};
+
   
   
 
@@ -561,5 +568,96 @@ exports.getUserLikedPosts = async (req, res) => {
   } catch (err) {
     console.error('좋아요 목록 조회 실패:', err);
     res.status(500).json({ error: '서버 오류' });
+  }
+};
+
+
+exports.deletePost = async (req, res) => {
+  const { postId } = req.params;
+  const userId = req.user.id;
+
+  try {
+    // 1. 본인 게시물인지 확인
+    const [postRows] = await db.execute(
+      'SELECT * FROM tbl_post WHERE postId = ? AND userId = ?',
+      [postId, userId]
+    );
+
+    if (postRows.length === 0) {
+      return res.status(403).json({ message: '삭제 권한이 없습니다.' });
+    }
+
+    // 2. 관련 테이블 데이터 삭제
+    await db.execute('DELETE FROM tbl_post_file WHERE postId = ?', [postId]);
+    await db.execute('DELETE FROM tbl_post_hashtag WHERE postId = ?', [postId]);
+    await db.execute('DELETE FROM tbl_mention WHERE postId = ?', [postId]);
+    await db.execute('DELETE FROM tbl_post_like WHERE postId = ?', [postId]);
+    await db.execute('DELETE FROM tbl_comment WHERE postId = ?', [postId]);
+
+    // 3. 게시글 삭제
+    await db.execute('DELETE FROM tbl_post WHERE postId = ?', [postId]);
+
+    res.json({ message: '피드 삭제 완료' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: '피드 삭제 실패' });
+  }
+};
+
+exports.updateFeed = async (req, res) => {
+  const { postId } = req.params;
+  const userId = req.user.id;
+  const { content } = req.body;
+  let hashtags = req.body.hashtags || [];
+  let existingImages = [];
+
+  try {
+    if (typeof hashtags === 'string') hashtags = [hashtags];
+    if (req.body.existingImages) {
+      existingImages = JSON.parse(req.body.existingImages);
+    }
+
+    console.log(postId, userId);
+
+    // 게시글 소유자 확인
+    const [rows] = await db.query('SELECT * FROM tbl_post WHERE postId = ? AND userId = ?', [postId, userId]);
+    if (rows.length === 0) return res.status(403).json({ message: '수정 권한 없음' });
+
+    // 기존 이미지 조회
+    const [oldImages] = await db.query('SELECT * FROM tbl_post_file WHERE postId = ?', [postId]);
+
+    // 삭제된 이미지 제거
+    const imagesToDelete = oldImages.filter(img => !existingImages.find(e => e.filePath === img.filePath));
+    for (const img of imagesToDelete) {
+      const fullPath = path.join(__dirname, '..', img.filePath);
+      fs.unlink(fullPath, (err) => {
+        if (err) console.error('이미지 삭제 실패:', err);
+      });
+      await db.query('DELETE FROM tbl_post_file WHERE fileId = ?', [img.fileId]);
+    }
+
+    // 본문, 위치 업데이트
+    await db.query('UPDATE tbl_post SET content = ? WHERE postId = ?', [content, postId]);
+
+    // 해시태그 갱신
+    // await db.query('DELETE FROM tbl_post_hashtag WHERE postId = ?', [postId]);
+    // for (const tag of hashtags) {
+    //   await db.query('INSERT INTO tbl_post_hashtag (postId, tag) VALUES (?, ?)', [postId, tag]);
+    // }
+
+    // 새 이미지 저장
+    if (req.files && req.files.length > 0) {
+      for (const file of req.files) {
+        await db.query('INSERT INTO tbl_post_file (postId, filePath) VALUES (?, ?)', [
+          postId,
+          `${process.env.SERVER_URL}/uploads/${file.filename}`,
+        ]);
+      }
+    }
+
+    return res.json({ message: '피드 수정 완료' });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: '피드 수정 실패' });
   }
 };

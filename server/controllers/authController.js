@@ -139,7 +139,7 @@ exports.signup = async (req, res) => {
   
       // JWT 발급
       const token = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET, {
-        expiresIn: '2h'
+        expiresIn: '9999h'
       });
   
       res.json({
@@ -157,5 +157,68 @@ exports.signup = async (req, res) => {
     } catch (err) {
       console.error(err);
       res.status(500).json({ message: '서버 오류' });
+    }
+  };
+
+  exports.findId = async (req, res) => {
+    const { username } = req.body;
+
+    try {
+      const [rows] = await db.query(
+        'SELECT email FROM tbl_users WHERE username = ?',
+        [username]
+      );
+
+      if (rows.length === 0) {
+        return res.status(404).json({ message: '일치하는 회원 정보가 없습니다.' });
+      }
+
+      res.json({ success: true, email: rows[0].email });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ message: '아이디 찾기 실패' });
+    }
+  };
+
+  let passwordResetCodes = {};
+
+  exports.sendResetCode = async (req, res) => {
+    const { email } = req.body;
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    passwordResetCodes[email] = code;
+
+    try {
+      const [user] = await db.query('SELECT * FROM tbl_users WHERE email = ?', [email]);
+      if (user.length === 0) {
+        return res.status(404).json({ message: '등록되지 않은 이메일입니다.' });
+      }
+
+      await sendEmail(email, '비밀번호 재설정 인증 코드', `인증코드: ${code}`);
+      res.json({ success: true });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ message: '이메일 전송 실패' });
+    }
+  };
+
+  exports.verifyResetCode = (req, res) => {
+    const { email, code } = req.body;
+    if (passwordResetCodes[email] === code) {
+      return res.json({ success: true });
+    }
+    res.status(400).json({ success: false, message: '인증 코드가 일치하지 않습니다.' });
+  };
+
+  exports.resetPassword = async (req, res) => {
+    const { email, newPassword } = req.body;
+
+    try {
+      const hashed = await bcrypt.hash(newPassword, 10);
+      await db.query('UPDATE tbl_users SET password = ? WHERE email = ?', [hashed, email]);
+      delete passwordResetCodes[email];
+      res.json({ success: true, message: '비밀번호가 변경되었습니다.' });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ message: '비밀번호 재설정 실패' });
     }
   };

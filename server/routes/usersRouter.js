@@ -26,6 +26,7 @@ router.put('/:id/profile', authMiddleware , upload.single('profileImage'), userC
 
 router.post('/check-username', userController.checkUsernameDuplicate);
 
+router.get('/RandomFriends',authMiddleware,userController.getRandomFriend);
 
 
 

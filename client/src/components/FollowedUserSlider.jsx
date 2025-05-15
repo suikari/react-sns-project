@@ -79,7 +79,7 @@ const FollowedUserSlider = () => {
     };
 
     fetchFollowedUsers();
-  }, []);
+  }, [viewModalOpen]);
 
   if (loading) {
     return (

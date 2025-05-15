@@ -110,11 +110,18 @@ const LoginPage = () => {
         />
       </Box>
 
-      <Box sx={{ mt: 2 }}>
+      <Box sx={{ mt: 2, display: 'flex', justifyContent: 'space-between' }}>
+        <Button variant="text" onClick={() => navigate('/find-id')}>
+          아이디 찾기
+        </Button>
+        <Button variant="text" onClick={() => navigate('/find-password')}>
+          비밀번호 찾기
+        </Button>
         <Button variant="outlined" onClick={goToSignup}>
           회원가입
         </Button>
       </Box>
+      
     </AuthFormWrapper>
   );
 };

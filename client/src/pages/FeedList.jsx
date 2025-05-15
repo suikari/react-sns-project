@@ -1,4 +1,4 @@
-import React, { useEffect, useState , useRef  } from 'react';
+import React, { useEffect, useState , useRef , useCallback  , useLayoutEffect  } from 'react';
 import axios from 'axios';
 import {
   Box, CircularProgress, Stack, Avatar, Typography, Card, CardContent, IconButton,
@@ -12,9 +12,14 @@ import { jwtDecode } from "jwt-decode";
 import { useNavigate } from 'react-router-dom';
 import FollowedUserSlider from '../components/FollowedUserSlider';
 import FeedDetailModal from './FeedDetailModal'; 
+import FeedEditModal from './FeedEdit'; 
+import SendIcon from '@mui/icons-material/Send';
+
 import FeedContent from './FeedContent';
 import { getTimeAgo } from '../utils/timeAgo';
-
+import MoreVertIcon from '@mui/icons-material/MoreVert';
+import Menu from '@mui/material/Menu';
+import MenuItem from '@mui/material/MenuItem';
 import "../styles/feedList.css";
 
 const FeedList = () => {
@@ -30,6 +35,8 @@ const FeedList = () => {
   const [newReply, setNewReply] = useState('');
   const [editReplyId, setEditReplyId] = useState(null);
   const [editedReplyContent, setEditedReplyContent] = useState('');
+  const [editOpen, setEditOpen] = useState(false);
+
 
   // const [currentUserId, setUserId] = useState("");
   // const [flag, setFlag] = useState(false);
@@ -45,23 +52,97 @@ const FeedList = () => {
   };
 
 
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const observer = useRef();
+  const limit = 10;
+  const scrollRestoreRef = useRef(null);
+  const scrollYRef = useRef(0);
+
+
   const navigate = useNavigate(); // 페이지 이동을 위한 함수 리턴
   
-  const fetchFeeds = async (filterValue = 'all') => {
+
+  // 🔽 컴포넌트 상태 추가
+  const [anchorEl, setAnchorEl] = useState(null);
+  const [selectedMenuPostId, setSelectedMenuPostId] = useState(null);
+
+  const menuOpen = Boolean(anchorEl);
+
+  // feed 불러오기 함수
+  const fetchFeeds = async (pageNum = 1, filterValue = 'all') => {
+    const offset = (pageNum - 1) * limit;
+    
+
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      const res = await axios.get(`http://localhost:3003/api/feed${filterValue !== 'all' ? `?filter=${filterValue}` : ''}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setFeeds(res.data);
-      console.log(res.data);
-    } catch (error) {
-      console.error('피드 불러오기 실패:', error);
+      const res = await axios.get(
+        `http://localhost:3003/api/feed?offset=${offset}${filterValue !== 'all' ? `&filter=${filterValue}` : ''}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      
+      console.log('feed',res.data);
+      if (pageNum === 1) {
+        setFeeds(res.data);
+      } else {
+        setFeeds((prevFeeds) => [...prevFeeds, ...res.data]);
+      }
+
+      setHasMore(res.data.length > 0);
+    } catch (err) {
+      console.error(err);
     } finally {
       setLoading(false);
     }
   };
+
+  // 3) page 변경 시 새 페이지 데이터 호출 (page 1일 때는 필터 effect에서 이미 호출하므로 제외)
+  useEffect(() => {
+    const token = localStorage.getItem('token') || '';
+
+    if (token !== '') {
+      const dToken = jwtDecode(token);
+      currentUserIdRef.current = dToken.id;
+    } else {
+      alert('로그인 후 이용 바랍니다.');
+      navigate('/login');
+    }
+
+    setPage(1);
+    setFeeds([]);
+    setHasMore(true);
+    fetchFeeds(1, filter);
+  }, [filter]);
+
+  useEffect(() => {
+    if (page > 1) {
+      fetchFeeds(page, filter);
+    }
+  }, [page]);
+
+  useLayoutEffect(() => {
+    if (page > 1 && feeds.length > 0) {
+        window.scrollTo({ top: scrollYRef.current, behavior: 'auto' });
+    }
+  }, [feeds]);
+
+  // 마지막 아이템에 붙일 ref 함수
+  const lastFeedRef = useCallback(node => {
+    if (loading) return;
+    if (observer.current) observer.current.disconnect();
+
+    observer.current = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting && hasMore) {
+        scrollYRef.current = window.scrollY;
+        setPage((prev) => prev + 1);
+      }
+    });
+
+    if (node) observer.current.observe(node);
+  }, [loading, hasMore]);
 
   const fetchSingleFeed = async (feedId) => {
     try {
@@ -79,21 +160,6 @@ const FeedList = () => {
       console.error('피드 업데이트 실패:', error);
     }
   };
-
-  useEffect(() => {
-    const token = localStorage.getItem('token') || '';
-
-    if (token != '') {
-      let dToken = jwtDecode(token) // 디코딩
-      currentUserIdRef.current = dToken.id;
-    } else {
-      alert('로그인 후 이용 바랍니다.');
-      navigate('/login');
-    }
-    
-    fetchFeeds(filter);
-
-  }, [filter]);
 
   console.log("teee",currentUserIdRef.current);
 
@@ -265,6 +331,44 @@ const FeedList = () => {
     }
   };
 
+
+  // 메뉴 열기
+  const handleMenuOpen = (event, postId) => {
+    setAnchorEl(event.currentTarget);
+    setSelectedMenuPostId(postId);
+  };
+
+  // 메뉴 닫기
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+    setSelectedMenuPostId(null);
+  };
+
+  // 피드 수정 및 삭제 핸들러
+  const handleEditPost = (postId) => {
+    console.log('ed',postId);
+    handleMenuClose();
+    setSelectedPostId(postId);
+
+    handleEditOpen();
+    // 수정 로직 호출
+    console.log('Edit', postId);
+  };
+
+  const handleDeletePost = (postId) => {
+        console.log('de',postId);
+
+    handleMenuClose();
+    // 삭제 로직 호출
+    console.log('Delete', postId);
+  };
+
+  const handleEditOpen = () => setEditOpen(true);
+  
+  const handleEditClose = () => {
+    setEditOpen(false);
+  }
+
   if (loading) {
     return <Box sx={{ textAlign: 'center', mt: 4 }}><CircularProgress /></Box>;
   }
@@ -301,8 +405,18 @@ const FeedList = () => {
         <ToggleButton value="mention">멘션</ToggleButton>
       </ToggleButtonGroup>
 
-      {feeds.map((feed) => (
-        <Card key={feed.postId} sx={{ mb: 3, boxShadow: 3, borderRadius: 2 }}>
+      {feeds.map((feed, idx) => (
+        <Card 
+            ref={
+              feeds.length === idx + 1
+                ? (node) => {
+                    lastFeedRef(node); // intersection 감지용
+                    scrollRestoreRef.current = node; // 위치 복원용
+                  }
+                : null
+            } 
+
+        key={feed.postId} sx={{ mb: 3, boxShadow: 3, borderRadius: 2 ,  position: 'relative'  }}>
           <CardContent sx={{ pb: 2 }}>
             <Stack direction="row" alignItems="center" spacing={2} onClick={()=>{
                 handleUserProfile(feed.userId);
@@ -317,6 +431,41 @@ const FeedList = () => {
 
             <Typography component="div"  sx={{ mt: 2, fontSize: 16, lineHeight: 1.5 }} > <FeedContent text={feed.content} /> </Typography>
           </CardContent>
+
+          {feed.userId === currentUserIdRef.current && (
+            <>
+              <IconButton
+                onClick={(e) => handleMenuOpen(e, feed.postId)}
+                sx={{ position: 'absolute', top: 8, right: 8 }}
+              >
+                <MoreVertIcon sx={{ fontSize: 32 }} />
+
+              </IconButton>
+
+                <Menu
+                  anchorEl={anchorEl}
+                  open={menuOpen && selectedMenuPostId === feed.postId}
+                  onClose={handleMenuClose}
+                  anchorOrigin={{
+                    vertical: 'top',
+                    horizontal: 'right',
+                  }}
+                  transformOrigin={{
+                    vertical: 'top',
+                    horizontal: 'right',
+                  }}
+                  PaperProps={{
+                    sx: {
+                      ml: '-40px', // 메뉴 왼쪽으로 16px 이동
+                      mt: '8px',   // 메뉴 위쪽으로 8px 내려서 아이콘과 간격 유지
+                    },
+                  }}
+                >
+                <MenuItem onClick={() => handleEditPost(feed.postId)}>수정</MenuItem>
+                <MenuItem onClick={() => handleDeletePost(feed.postId)}>삭제</MenuItem>
+              </Menu>
+            </>
+          )}
 
           {/* 👉 해시태그 */}
           {feed.hashtags && feed.hashtags.length > 0 && (
@@ -385,13 +534,18 @@ const FeedList = () => {
               좋아요 {feed.likeCount || 0}개
             </Typography>
             
-            <Typography component="div"  onClick={() => toggleComment(feed.postId)} variant="body2" sx={{ display: 'inline', ml: 1 , mr: 1 , cursor:'pointer' }}>
+            <Typography component="div"  onClick={() => toggleComment(feed.postId)} variant="body2" sx={{ display: 'inline', ml: 1 , mr: 2 , cursor:'pointer' }}>
               <IconButton >
                 <CommentIcon />
               </IconButton>
               {feed.comments ? feed.comments.length + feed.comments.reduce((sum, comment) => sum + (comment.replies?.length || 0), 0)  : 0}개 
              </Typography>
 
+             <Typography component="div" variant="body2" sx={{ fontWeight: 'bold', display: 'inline', mr: 1 , cursor:'pointer' }}>
+                <IconButton >
+                  <SendIcon />
+                </IconButton>
+             </Typography>
 
             {openComments[feed.postId] && (
               <Box sx={{ mt: 2, padding: 2,  borderRadius: 2 }}>
@@ -574,7 +728,11 @@ const FeedList = () => {
           postId={selectedPostId}
       />
       
-
+      <FeedEditModal
+        open={editOpen}
+        handleClose={handleEditClose}
+        postId={selectedPostId}
+      />
 
     </Box>
   );

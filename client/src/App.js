@@ -6,6 +6,10 @@ import { jwtDecode } from "jwt-decode";
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { DarkModeContext } from "./context/DarkModeContext"
 
+
+import ForgotEmail from './components/ForgotEmail';
+import ResetPassword from './components/ResetPassword';
+
 import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
 import FeedList from './pages/FeedList';
@@ -17,7 +21,7 @@ import "./App.css";
 
 function App() {
   const location = useLocation();
-  const isAuthPage = location.pathname === '/login' || location.pathname === '/join';
+  const isAuthPage = location.pathname === '/login' || location.pathname === '/signup' || location.pathname === '/find-id' || location.pathname === '/find-password';
   const navigate = useNavigate(); // 페이지 이동을 위한 함수 리턴
 
   const [darkMode, setDarkMode] = useState(false); // 다크모드 여부
@@ -74,6 +78,8 @@ function App() {
         <Routes>
           <Route path="/" element={<FeedList />} />
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/find-id" element={<ForgotEmail />} />
+          <Route path="/find-password" element={<ResetPassword />} />
           {/* <Route path="/register" element={<FeedCreate />} /> */}
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/mypage" element={<UserPage />} />

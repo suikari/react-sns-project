@@ -105,7 +105,7 @@ exports.getMessages = async (req, res) => {
 exports.openDirectChat = async (req, res) => {
   const userId = req.user.id;
   const targetUserId = req.body.targetUserId;
-  const providedRoomName = req.body.roomName; // 사용자가 roomName을 보냈을 수도 있음
+  const providedRoomName = req.body.roomName;
 
   if (!targetUserId || userId === targetUserId) {
     return res.status(400).json({ error: '잘못된 요청입니다.' });
@@ -126,21 +126,20 @@ exports.openDirectChat = async (req, res) => {
 
     if (existing.length > 0) {
       const roomId = existing[0].id;
-    
-      // 채팅방 이름 및 유저 목록 같이 가져오기
+
       const [[room]] = await db.query(
-        'SELECT id, roomName FROM tbl_chat_rooms WHERE id = ?',
+        'SELECT id as roomId , roomName FROM tbl_chat_rooms WHERE id = ?',
         [roomId]
       );
-    
+
       const [participants] = await db.query(
         `SELECT u.id, u.username, u.profileImage
-         FROM tbl_chat_room_users cru
-         JOIN tbl_users u ON cru.userId = u.id
-         WHERE cru.roomId = ?`,
-        [roomId]
+        FROM tbl_chat_room_users cru
+        JOIN tbl_users u ON cru.userId = u.id
+        WHERE cru.roomId = ? AND cru.userId != ?`,
+        [roomId, userId]
       );
-    
+
       return res.status(200).json({
         ...room,
         participants,
@@ -177,11 +176,29 @@ exports.openDirectChat = async (req, res) => {
       [values]
     );
 
-    res.status(201).json({ roomId });
+    // ✅ 생성된 채팅방 정보 및 참여자 목록 조회 후 응답
+    const [[room]] = await db.query(
+      'SELECT id as roomId , roomName FROM tbl_chat_rooms WHERE id = ?',
+      [roomId]
+    );
+
+    const [participants] = await db.query(
+      `SELECT u.id, u.username, u.profileImage
+      FROM tbl_chat_room_users cru
+      JOIN tbl_users u ON cru.userId = u.id
+      WHERE cru.roomId = ? AND cru.userId != ?`,
+      [roomId, userId]
+    );
+
+    res.status(201).json({
+      ...room,
+      participants,
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
+
 
 exports.createOrGetGroupChatRoom = async (req, res) => {
   let userIds = req.body.userIds || [];

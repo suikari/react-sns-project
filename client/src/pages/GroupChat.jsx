@@ -130,7 +130,7 @@ const GroupChatPage = () => {
 
     loadMessages();
   }
-}, [hasMore, beforeMessageId, currentRoomId]);
+}, [hasMore, beforeMessageId, currentRoomId, chatRooms]);
 
   // 수신 메시지 처리
   useEffect(() => {
@@ -244,13 +244,17 @@ const GroupChatPage = () => {
         { targetUserId },
         { headers: { Authorization: `Bearer ${token}` } }
       );
+
+      console.log('test',res.data ,'eeee', chatRooms );
       const room = res.data;
 
-      // 이미 목록에 없으면 추가
-      if (!chatRooms.find((r) => r.roomId === room.id)) {
+      //  목록에 없으면 추가
+      if (!chatRooms.find((r) => r.roomId === room.roomId)) {
         setChatRooms((prev) => [...prev, room]);
-      }
-      setCurrentRoomId(room.id); // 이동
+      } 
+      
+      setCurrentRoomId(room.roomId); // 이동
+
     } catch (err) {
       console.error('DM 생성 실패:', err);
     }
@@ -356,33 +360,47 @@ const GroupChatPage = () => {
       <Paper sx={{ width: 250, mr: 2, p: 1 }}>
         {/* 👇 팔로잉 사용자 슬라이더 */}
         <Box mb={2}>
-          <Slider
-            dots={false}
-            infinite={false}
-            speed={300}
-            slidesToShow={4}
-            slidesToScroll={2}
-            swipeToSlide
-            arrows={false}
-          >
-            {followedUsers.map((user) => (
-              <Box
-                key={user.id}
-                textAlign="center"
-                px={0.5}
-                sx={{ cursor: 'pointer' }}
-                onClick={() => handleFollowUserClick(user.id)}
+          {followedUsers.length > 0 ? (
+            <Slider
+              dots={false}
+              infinite={false}
+              speed={300}
+              slidesToShow={4}
+              slidesToScroll={2}
+              swipeToSlide
+              arrows={false}
+            >
+              {followedUsers.map((user) => (
+                <Box
+                  key={user.id}
+                  textAlign="center"
+                  px={0.5}
+                  sx={{ cursor: 'pointer' }}
+                  onClick={() => handleFollowUserClick(user.id)}
+                >
+                  <Avatar
+                    src={user.profileImage || '/images/default-profile.jpg'}
+                    sx={{ width: 40, height: 40, mx: 'auto', mb: 0.5 }}
+                  />
+                  <Typography variant="caption" noWrap>
+                    {user.username}
+                  </Typography>
+                </Box>
+              ))}
+            </Slider>
+          ) : (
+            <Box textAlign="center" py={2}>
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                sx={{
+                  whiteSpace: 'normal',
+                }}
               >
-                <Avatar
-                  src={user.profileImage || '/images/default-profile.jpg'}
-                  sx={{ width: 40, height: 40, mx: 'auto', mb: 0.5 }}
-                />
-                <Typography variant="caption" noWrap>
-                  {user.username}
-                </Typography>
-              </Box>
-            ))}
-          </Slider>
+                팔로우한 친구가 없습니다
+              </Typography>
+            </Box>
+          )}
         </Box>
 
         {/* 채팅방 목록 */}

@@ -315,3 +315,49 @@ exports.getFollowingUsersWithStories = async (req, res) => {
   }
 };
 
+// 추천 친구 API
+exports.getRandomFriend = async (req, res) => {
+  const currentUserId = req.user.id; // JWT로부터 추출된 사용자 ID
+  const connection = await db.getConnection();
+
+  try {
+    // 관계 기반 추천
+    const [relBased] = await connection.query(`
+      SELECT DISTINCT u.id, u.username, u.profileImage
+      FROM tbl_follow f
+      JOIN tbl_follow f2 ON f.followedId = f2.followerId OR f.followedId = f2.followedId
+      JOIN tbl_users u ON u.id = f2.followedId
+      WHERE f.followerId = ?
+        AND u.id != ?
+        AND u.id NOT IN (
+          SELECT followedId FROM tbl_follow WHERE followerId = ?
+        )
+      LIMIT 10
+    `, [currentUserId, currentUserId, currentUserId]);
+
+    let recommendations = relBased;
+
+    // 부족하면 랜덤 유저 추가
+    if (recommendations.length < 10) {
+      const excludeIds = [currentUserId, ...recommendations.map(r => r.id)];
+      const placeholders = excludeIds.map(() => '?').join(',');
+
+      const [randomUsers] = await connection.query(`
+        SELECT id, username, profileImage
+        FROM tbl_users
+        WHERE id NOT IN (${placeholders})
+        ORDER BY RAND()
+        LIMIT ?
+      `, [...excludeIds, 10 - recommendations.length]);
+
+      recommendations = [...recommendations, ...randomUsers];
+    }
+
+    res.json({ recommendations });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: '추천 실패' });
+  } finally {
+    connection.release();
+  }
+};

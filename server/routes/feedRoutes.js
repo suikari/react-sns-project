@@ -13,6 +13,9 @@ router.get('/', authMiddleware, feedController.getAllPosts);
 // 하나 조회
 router.get('/:postId', authMiddleware, feedController.getPostById);
 
+router.delete('/:postId', authMiddleware, feedController.deletePost);
+
+router.put('/:postId', authMiddleware, upload.array('files') , feedController.updateFeed);
 
 
 // 좋아요 토글
