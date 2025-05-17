@@ -21,6 +21,7 @@ import MoreVertIcon from '@mui/icons-material/MoreVert';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import "../styles/feedList.css";
+import RecommendedFriends from '../components/RecommendedFriends';
 
 const FeedList = () => {
   const [feeds, setFeeds] = useState([]);
@@ -36,6 +37,7 @@ const FeedList = () => {
   const [editReplyId, setEditReplyId] = useState(null);
   const [editedReplyContent, setEditedReplyContent] = useState('');
   const [editOpen, setEditOpen] = useState(false);
+  const [sidevisible, setSdieVisible] = useState(true);
 
 
   // const [currentUserId, setUserId] = useState("");
@@ -401,6 +403,7 @@ const FeedList = () => {
         }}
       >
         <ToggleButton value="all">전체</ToggleButton>
+        < ToggleButton value="following">팔로워</ToggleButton>
         <ToggleButton value="my">내 피드</ToggleButton>
         <ToggleButton value="mention">멘션</ToggleButton>
       </ToggleButtonGroup>
@@ -721,6 +724,9 @@ const FeedList = () => {
           </Box>
         </Card>
       ))}
+
+      {sidevisible && < RecommendedFriends />}
+
 
       <FeedDetailModal
           open={isModalOpen}

@@ -174,6 +174,14 @@ exports.getAllPosts = async (req, res) => {
     query += ' JOIN tbl_mention m ON p.postId = m.postId';
     where = 'WHERE m.mentionedUserId = ?';
     params.push(userId);
+  } else if (filter === 'following') {
+    // 수정된 팔로우 컬럼명 반영
+    where = `
+      WHERE p.userId IN (
+        SELECT followedId FROM tbl_follow WHERE followerId = ?
+      )
+    `;
+    params.push(userId);
   }
 
   query += ` ${where} ORDER BY p.createdAt DESC LIMIT ${limit} OFFSET ${offset}`;
@@ -231,6 +239,7 @@ exports.getAllPosts = async (req, res) => {
     res.status(500).json({ message: '피드 조회 실패' });
   }
 };
+
 
   
   
@@ -617,40 +626,93 @@ exports.updateFeed = async (req, res) => {
       existingImages = JSON.parse(req.body.existingImages);
     }
 
-    console.log(postId, userId);
-
-    // 게시글 소유자 확인
+    // 1. 게시글 소유자 확인
     const [rows] = await db.query('SELECT * FROM tbl_post WHERE postId = ? AND userId = ?', [postId, userId]);
     if (rows.length === 0) return res.status(403).json({ message: '수정 권한 없음' });
 
-    // 기존 이미지 조회
+    // 2. 기존 이미지 조회 및 삭제 처리
     const [oldImages] = await db.query('SELECT * FROM tbl_post_file WHERE postId = ?', [postId]);
-
-    // 삭제된 이미지 제거
     const imagesToDelete = oldImages.filter(img => !existingImages.find(e => e.filePath === img.filePath));
     for (const img of imagesToDelete) {
-      const fullPath = path.join(__dirname, '..', img.filePath);
+      const fullPath = path.join(__dirname, '..', img.filePath.replace(`${process.env.SERVER_URL}`, '')); // 파일시스템 경로 맞춤
       fs.unlink(fullPath, (err) => {
         if (err) console.error('이미지 삭제 실패:', err);
       });
       await db.query('DELETE FROM tbl_post_file WHERE fileId = ?', [img.fileId]);
     }
 
-    // 본문, 위치 업데이트
+    // 3. 본문, 위치 업데이트
     await db.query('UPDATE tbl_post SET content = ? WHERE postId = ?', [content, postId]);
 
-    // 해시태그 갱신
-    // await db.query('DELETE FROM tbl_post_hashtag WHERE postId = ?', [postId]);
-    // for (const tag of hashtags) {
-    //   await db.query('INSERT INTO tbl_post_hashtag (postId, tag) VALUES (?, ?)', [postId, tag]);
-    // }
+    // 4. 해시태그 갱신
+    // 기존 해시태그 삭제
+    await db.query('DELETE FROM tbl_post_hashtag WHERE postId = ?', [postId]);
+    
+    // 새 해시태그 삽입
+    for (const tag of hashtags) {
+      const trimmed = tag.trim().toLowerCase();
+      const [existing] = await db.execute(
+        'SELECT hashtagId FROM tbl_hashtag WHERE tag = ?',
+        [trimmed]
+      );
+      let hashtagId;
+      if (existing.length > 0) {
+        hashtagId = existing[0].hashtagId;
+      } else {
+        const [inserted] = await db.execute(
+          'INSERT INTO tbl_hashtag (tag) VALUES (?)',
+          [trimmed]
+        );
+        hashtagId = inserted.insertId;
+      }
+      await db.execute(
+        'INSERT INTO tbl_post_hashtag (postId, hashtagId) VALUES (?, ?)',
+        [postId, hashtagId]
+      );
+    }
 
-    // 새 이미지 저장
+    // 5. 멘션 처리
+    // 기존 멘션 삭제
+    await db.execute('DELETE FROM tbl_mention WHERE postId = ?', [postId]);
+
+    // 새 멘션 추출
+    const mentions = extractMentionedUserIds(content);
+    if (mentions) {
+      for (const mentionedName of mentions) {
+        // 멘션된 사용자의 userId를 조회
+        const [userResult] = await db.query(
+          'SELECT id FROM tbl_users WHERE username = ?', [mentionedName]
+        );
+
+        if (userResult && userResult.length > 0) {
+          const mentionedUserId = userResult[0].id;
+
+          // 알림 테이블에 삽입
+          await db.query(
+            `INSERT INTO tbl_notifications (userId, type, message, relatedFeedId)
+             VALUES (?, 'mention', ?, ?)`,
+            [mentionedUserId, `${mentionedName}님이 당신을 언급했습니다.`, postId]
+          );
+
+          // tbl_mention 테이블에 삽입
+          await db.execute(
+            'INSERT INTO tbl_mention (postId, mentionedUserId) VALUES (?, ?)',
+            [postId, mentionedUserId]
+          );
+        } else {
+          console.log(`User ${mentionedName} does not exist.`);
+        }
+      }
+    }
+
+    // 6. 새 이미지 저장
     if (req.files && req.files.length > 0) {
       for (const file of req.files) {
-        await db.query('INSERT INTO tbl_post_file (postId, filePath) VALUES (?, ?)', [
+        const fileType = file.mimetype.startsWith('video') ? 'video' : 'image';
+        await db.query('INSERT INTO tbl_post_file (postId, filePath, fileType) VALUES (?, ?, ?)', [
           postId,
           `${process.env.SERVER_URL}/uploads/${file.filename}`,
+          fileType
         ]);
       }
     }

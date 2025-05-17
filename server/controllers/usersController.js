@@ -315,49 +315,61 @@ exports.getFollowingUsersWithStories = async (req, res) => {
   }
 };
 
-// 추천 친구 API
 exports.getRandomFriend = async (req, res) => {
-  const currentUserId = req.user.id; // JWT로부터 추출된 사용자 ID
-  const connection = await db.getConnection();
+  const currentUserId = req.user.id;
 
   try {
-    // 관계 기반 추천
-    const [relBased] = await connection.query(`
+    // 1. 관계 기반 추천
+    const [relBased] = await db.query(`
       SELECT DISTINCT u.id, u.username, u.profileImage
       FROM tbl_follow f
-      JOIN tbl_follow f2 ON f.followedId = f2.followerId OR f.followedId = f2.followedId
+      JOIN tbl_follow f2 ON f.followedId = f2.followerId
       JOIN tbl_users u ON u.id = f2.followedId
       WHERE f.followerId = ?
         AND u.id != ?
         AND u.id NOT IN (
           SELECT followedId FROM tbl_follow WHERE followerId = ?
         )
-      LIMIT 10
+      LIMIT 5
     `, [currentUserId, currentUserId, currentUserId]);
 
-    let recommendations = relBased;
+    let recommendations = [...relBased];
 
-    // 부족하면 랜덤 유저 추가
-    if (recommendations.length < 10) {
-      const excludeIds = [currentUserId, ...recommendations.map(r => r.id)];
-      const placeholders = excludeIds.map(() => '?').join(',');
+    // 🔸 추가: 현재 유저가 팔로우한 ID들 가져오기
+    const [followedRows] = await db.query(`
+      SELECT followedId FROM tbl_follow WHERE followerId = ?
+    `, [currentUserId]);
+    const followedIds = followedRows.map(row => row.followedId);
 
-      const [randomUsers] = await connection.query(`
+    // 🔸 제외할 ID들
+    const excludeIds = [currentUserId, ...recommendations.map(r => r.id), ...followedIds];
+    const placeholders = excludeIds.map(() => '?').join(',');
+
+    // 2. 보충 필요 시 무작위 유저 추천
+    if (recommendations.length < 5) {
+      const [[{ totalUsers }]] = await db.query(`
+        SELECT COUNT(*) AS totalUsers
+        FROM tbl_users
+        WHERE id NOT IN (${placeholders})
+      `, excludeIds);
+
+      const remaining = 5 - recommendations.length;
+      const maxOffset = Math.max(totalUsers - remaining, 0);
+      const randomOffset = Math.floor(Math.random() * (maxOffset + 1));
+
+      const [randomUsers] = await db.query(`
         SELECT id, username, profileImage
         FROM tbl_users
         WHERE id NOT IN (${placeholders})
-        ORDER BY RAND()
-        LIMIT ?
-      `, [...excludeIds, 10 - recommendations.length]);
+        LIMIT ? OFFSET ?
+      `, [...excludeIds, remaining, randomOffset]);
 
       recommendations = [...recommendations, ...randomUsers];
     }
 
     res.json({ recommendations });
   } catch (error) {
-    console.error(error);
+    console.error('추천 친구 오류:', error);
     res.status(500).json({ message: '추천 실패' });
-  } finally {
-    connection.release();
   }
 };
