@@ -14,11 +14,12 @@
 
 ---
 
+
 ## 기술 스택
 
 | Frontend | Backend | Database | Etc |
 |----------|---------|----------|------|
-| ![React](https://img.shields.io/badge/React-61DAFB?style=for-the-badge&logo=react&logoColor=white) <br> ![MUI](https://img.shields.io/badge/MUI-007FFF?style=for-the-badge&logo=mui&logoColor=white) | ![Node.js](https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=node.js&logoColor=white) <br> ![Express](https://img.shields.io/badge/Express-000000?style=for-the-badge&logo=express&logoColor=white) | ![MySQL](https://img.shields.io/badge/MySQL-4479A1?style=for-the-badge&logo=mysql&logoColor=white) | ![Socket.io](https://img.shields.io/badge/Socket.io-010101?style=for-the-badge&logo=socket.io&logoColor=white) <br> ![Multer](https://img.shields.io/badge/Multer-333333?style=for-the-badge&logoColor=white) <br> ![JWT](https://img.shields.io/badge/JWT-000000?style=for-the-badge&logo=jsonwebtokens&logoColor=white) <br> ![Axios](https://img.shields.io/badge/Axios-5A29E4?style=for-the-badge&logo=axios&logoColor=white) |
+| ![React](https://img.shields.io/badge/React-61DAFB?style=for-the-badge&logo=react&logoColor=white) <br> ![React DOM](https://img.shields.io/badge/React--DOM-20232A?style=for-the-badge&logo=react&logoColor=white) <br> ![MUI](https://img.shields.io/badge/MUI-007FFF?style=for-the-badge&logo=mui&logoColor=white) <br> ![react-oauth/google](https://img.shields.io/badge/Google%20OAuth-4285F4?style=for-the-badge&logo=google&logoColor=white) | ![Node.js](https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=node.js&logoColor=white) <br> ![Express](https://img.shields.io/badge/Express-000000?style=for-the-badge&logo=express&logoColor=white) <br> ![bcrypt](https://img.shields.io/badge/bcrypt-003366?style=for-the-badge&logoColor=white) | ![MySQL](https://img.shields.io/badge/MySQL-4479A1?style=for-the-badge&logo=mysql&logoColor=white) | ![Socket.io](https://img.shields.io/badge/Socket.io-010101?style=for-the-badge&logo=socket.io&logoColor=white) <br> ![Multer](https://img.shields.io/badge/Multer-333333?style=for-the-badge&logoColor=white) <br> ![JWT](https://img.shields.io/badge/JWT-000000?style=for-the-badge&logo=jsonwebtokens&logoColor=white) <br> ![Axios](https://img.shields.io/badge/Axios-5A29E4?style=for-the-badge&logo=axios&logoColor=white) <br> ![date-fns](https://img.shields.io/badge/date--fns-007ACC?style=for-the-badge&logoColor=white) |
 
 ---
 
