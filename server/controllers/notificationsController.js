@@ -4,8 +4,9 @@ require('dotenv').config();
 // 현재 로그인 유저의 알림 조회
 exports.getNotifications = async (req, res) => {
   const userId = req.user.id;
-  const limit = parseInt(req.query.limit) || 10; // 기본값 10
-  const offset = parseInt(req.query.offset) || 0; // 기본값 0
+const page = parseInt(req.query.page) || 1;
+const limit = parseInt(req.query.limit) || 10;
+const offset = (page - 1) * limit;
 
   try {
     const [rows] = await db.query(

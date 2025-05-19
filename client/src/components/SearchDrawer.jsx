@@ -1,8 +1,7 @@
-// components/SearchDrawer.jsx
 import React, { useEffect, useState } from 'react';
 import {
   Box, Toolbar, IconButton, InputBase, List, ListItem, ListItemText,
-  Avatar, CircularProgress, Typography
+  Avatar, CircularProgress, Typography, Divider
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import CloseIcon from '@mui/icons-material/Close';
@@ -19,8 +18,10 @@ const SearchDrawer = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [loading, setLoading] = useState(false);
-  const navigate = useNavigate(); // useNavigate 훅을 사용하여 navigate 함수 호출
+  const [recommendedFriends, setRecommendedFriends] = useState([]); // ✅ 추천 친구 상태
+  const navigate = useNavigate();
 
+  // 검색 기능
   useEffect(() => {
     const delayDebounce = setTimeout(() => {
       if (searchQuery.trim() !== '') {
@@ -29,7 +30,6 @@ const SearchDrawer = ({
         setSearchResults([]);
       }
     }, 300);
-
     return () => clearTimeout(delayDebounce);
   }, [searchQuery]);
 
@@ -46,6 +46,23 @@ const SearchDrawer = ({
       setSearchResults([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // ✅ 추천 친구 불러오기
+  useEffect(() => {
+    fetchRecommendedFriends();
+  }, []);
+
+  const fetchRecommendedFriends = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get('http://localhost:3003/api/users/RandomFriends', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setRecommendedFriends( response.data.recommendations || []);
+    } catch (error) {
+      console.error('추천 친구 불러오기 실패:', error);
     }
   };
 
@@ -90,17 +107,25 @@ const SearchDrawer = ({
             <CircularProgress size={20} />
             <Box ml={2}>불러오는 중...</Box>
           </ListItem>
-        ) : searchResults.length === 0 ? (
+        ) : searchQuery.trim() === '' ? (
+          <ListItem>
+            <ListItemText primary="검색어를 입력하세요." />
+          </ListItem>
+        )  : searchResults.length === 0 ? (
           <ListItem>
             <ListItemText primary="검색 결과가 없습니다." />
           </ListItem>
         ) : (
           searchResults.map((user, idx) => (
-            <ListItem onClick={()=>{
-                navigate('/userpage/'+user.id);
-                toggleSearchDrawer();             
-            }}
-            key={idx} alignItems="flex-start">
+            <ListItem
+              key={idx}
+              alignItems="flex-start"
+              onClick={() => {
+                navigate('/userpage/' + user.id);
+                toggleSearchDrawer();
+              }}
+              sx={{ cursor: 'pointer' }}
+            >
               <Avatar src={user.profileImage} alt={user.username} sx={{ mr: 2 }} />
               <Box>
                 <Typography variant="subtitle1" fontWeight="bold">
@@ -111,6 +136,40 @@ const SearchDrawer = ({
                 </Typography>
                 <Typography variant="caption" color={user.isFollowed ? 'primary.main' : 'text.disabled'}>
                   {user.isFollowed ? '팔로우 중' : ''}
+                </Typography>
+              </Box>
+            </ListItem>
+          ))
+        )}
+
+        {/* ✅ 추천 친구 리스트 */}
+        <Divider sx={{ my: 2 }} />
+        <ListItem>
+          <ListItemText primary="추천 친구" primaryTypographyProps={{ fontWeight: 'bold' }} />
+        </ListItem>
+
+        {recommendedFriends.length === 0 ? (
+          <ListItem>
+            <ListItemText primary="추천 친구가 없습니다." />
+          </ListItem>
+        ) : (
+          recommendedFriends.map((friend, idx) => (
+            <ListItem
+              key={idx}
+              alignItems="flex-start"
+              onClick={() => {
+                navigate('/userpage/' + friend.id);
+                toggleSearchDrawer();
+              }}
+              sx={{ cursor: 'pointer' }}
+            >
+              <Avatar src={friend.profileImage} alt={friend.username} sx={{ mr: 2 }} />
+              <Box>
+                <Typography variant="subtitle1" fontWeight="bold">
+                  {friend.username || '이름 없음'}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {friend.email}
                 </Typography>
               </Box>
             </ListItem>
