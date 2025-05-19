@@ -6,13 +6,13 @@ const authMiddleware = require('../middlewares/authMiddleware');
 const upload = require('../middlewares/upload'); 
 
 
-// ✅ 스토리 업로드 (파일 + 설명)
+// 스토리 업로드 (파일 + 설명)
 router.post('/', authMiddleware, upload.single('file'), storyController.createStories);
 
-// ✅ 전체 스토리 목록 불러오기 (24시간 이내)
+// 전체 스토리 목록 불러오기 (24시간 이내)
 router.get('/', authMiddleware, storyController.getStories);
 
-// ✅ 스토리 조회 기록 저장
+// 스토리 조회 기록 저장
 router.post('/view/:storyId', authMiddleware, storyController.stroiesView);
 
 // 내가 올린 스토리

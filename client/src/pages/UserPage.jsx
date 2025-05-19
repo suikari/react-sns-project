@@ -6,15 +6,22 @@ import { jwtDecode } from 'jwt-decode';
 import FeedDetailModal from './FeedDetailModal'; // 경로 확인
 import { Flag } from '@mui/icons-material';
 import ProfileEditModal from './ProfileEditModal'; // 추가
+import StoryGallery from '../components/StoryGallery'; // 추가
+import StoryViewModal from '../components/StoryViewModal';
 
 export default function UserPage() {
   const params = useParams();
   const [userId, setUserId] = useState(null);
+  const [userName, setUserName] = useState(null);
+  const [userImage, setUserImage] = useState(null);
+
   const [currentId, setCurrentId] = useState(null);
   const [user, setUser] = useState(null);
   const [feeds, setFeeds] = useState([]);
   const [comments, setComments] = useState([]);
   const [likes, setLikes] = useState([]);
+  const [stories, setStories] = useState([]);
+
   const [isFollowing, setIsFollowing] = useState(false);
 
   const [openModal, setOpenModal] = useState(false);
@@ -25,6 +32,9 @@ export default function UserPage() {
   const [isflag, setFlag] = useState(false); // 탭 상태 관리
 
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  
+  const [openStoryModal, setStoryOpenModal] = useState(false);
+  const [selectedStoryUser, setSelectedStoryUser] = useState(null);
 
   const navigate = useNavigate(); // 페이지 이동을 위한 함수 리턴
 
@@ -84,7 +94,7 @@ export default function UserPage() {
         navigate('/login');
       }
 
-      const [userRes, followRes, myfeed, mycomment, mylikelist ] = await Promise.all([
+      const [userRes, followRes, myfeed, mycomment, mylikelist, myStories ] = await Promise.all([
         axios.get(`http://localhost:3003/api/users/${userId}`),
         axios.get(`http://localhost:3003/api/users/follow/info/${userId}`),
         axios.get(`http://localhost:3003/api/feed?filter=my&userId=${userId}`, {
@@ -95,14 +105,20 @@ export default function UserPage() {
         }),
         axios.get(`http://localhost:3003/api/feed/like/${userId}`, {
           headers: { Authorization: `Bearer ${token}` },
-      }),
-
+        }),
+        axios.get(`http://localhost:3003/api/story/my`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
       ]);
       setUser(userRes.data[0]);
+      setUserName(userRes.data[0].username);
+      setUserImage(userRes.data[0].profileImage);
+
       setFollowInfo(followRes.data);
       setFeeds(myfeed.data);
       setComments(mycomment.data);
       setLikes(mylikelist.data);
+      setStories(myStories.data);
 
       if (followRes.data.followers && Array.isArray(followRes.data.followers)) {
         const isUserFollowing = followRes.data.followers.some((follower) => follower.id === currentId);
@@ -152,6 +168,25 @@ export default function UserPage() {
     }
   };
 
+  const handleStoryOpenModalWithStoryId = (storyId) => {
+    const story = stories.find((s) => s.storyId === storyId);
+    if (!story) return;
+
+    setSelectedStoryUser({
+      username: userName, // 실제로 유저 이름이 필요하다면 수정
+      profileImage: userImage, // 프로필 이미지도 필요하면 추가
+      stories: [story], // 단일 스토리만 배열로 넘김
+    });
+
+    setStoryOpenModal(true);
+  };
+
+  const handleStoryCloseModal = () => {
+    setStoryOpenModal(false);
+    setSelectedStoryUser(null);
+  };
+
+  
   if (!userId || !user) return <div>Loading...</div>;
 
   return (
@@ -217,6 +252,9 @@ export default function UserPage() {
         <Tab label="피드" />
         <Tab label="댓글" />
         <Tab label="좋아요" />
+          {currentId === user.id ? (
+            <Tab label="스토리" />
+          ) : null }
       </Tabs>
 
       {value === 0 && (
@@ -375,6 +413,13 @@ export default function UserPage() {
             </Box>
           </>
       )}
+      {value === 3 && (
+          <StoryGallery
+            stories={stories}  // storyList는 위에 JSON 구조
+            openModalWithStoryId={handleStoryOpenModalWithStoryId} // 클릭 시 처리
+          />
+      )}
+
     </Box>
 
 
@@ -429,6 +474,12 @@ export default function UserPage() {
         ))}
       </Box>
     </Modal>
+
+      <StoryViewModal
+        open={openStoryModal}                 
+        handleClose={handleStoryCloseModal} 
+        user={selectedStoryUser}            
+      />
 
     </Box>
   );
