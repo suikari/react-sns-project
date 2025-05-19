@@ -544,11 +544,11 @@ const FeedList = () => {
               {feed.comments ? feed.comments.length + feed.comments.reduce((sum, comment) => sum + (comment.replies?.length || 0), 0)  : 0}개 
              </Typography>
 
-             <Typography component="div" variant="body2" sx={{ fontWeight: 'bold', display: 'inline', mr: 1 , cursor:'pointer' }}>
+             {/* <Typography component="div" variant="body2" sx={{ fontWeight: 'bold', display: 'inline', mr: 1 , cursor:'pointer' }}>
                 <IconButton >
                   <SendIcon />
                 </IconButton>
-             </Typography>
+             </Typography> */}
 
             {openComments[feed.postId] && (
               <Box sx={{ mt: 2, padding: 2,  borderRadius: 2 }}>
