@@ -14,78 +14,7 @@
 /*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
--- 테이블 sample1.board 구조 내보내기
-CREATE TABLE IF NOT EXISTS `board` (
-  `BOARDNO` int NOT NULL AUTO_INCREMENT,
-  `TITLE` varchar(100) DEFAULT NULL,
-  `CONTENTS` varchar(200) DEFAULT NULL,
-  `USERID` varchar(45) DEFAULT NULL,
-  `CDATETIME` datetime DEFAULT NULL,
-  `UDATETIME` datetime DEFAULT NULL,
-  PRIMARY KEY (`BOARDNO`)
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- 테이블 데이터 sample1.board:~3 rows (대략적) 내보내기
-INSERT INTO `board` (`BOARDNO`, `TITLE`, `CONTENTS`, `USERID`, `CDATETIME`, `UDATETIME`) VALUES
-	(1, '제목11', '내용 11', 'user01', '2025-02-03 17:00:55', '2025-02-03 17:00:55'),
-	(2, '제목22', '내용 22', 'user01', '2025-02-03 17:05:32', '2025-02-03 17:05:32'),
-	(3, '제목33', '내용 33', 'user01', '2025-02-03 17:06:20', '2025-02-03 17:06:20');
-
--- 테이블 sample1.student 구조 내보내기
-CREATE TABLE IF NOT EXISTS `student` (
-  `stu_no` char(8) NOT NULL,
-  `stu_name` varchar(12) DEFAULT NULL,
-  `stu_dept` varchar(20) DEFAULT NULL,
-  `stu_grade` int DEFAULT NULL,
-  `stu_class` char(1) DEFAULT NULL,
-  `stu_gender` char(1) DEFAULT NULL,
-  `stu_height` int DEFAULT NULL,
-  `stu_weight` int DEFAULT NULL,
-  PRIMARY KEY (`stu_no`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
--- 테이블 데이터 sample1.student:~10 rows (대략적) 내보내기
-INSERT INTO `student` (`stu_no`, `stu_name`, `stu_dept`, `stu_grade`, `stu_class`, `stu_gender`, `stu_height`, `stu_weight`) VALUES
-	('20131001', '김종헌', '컴퓨터정보', 3, 'C', 'M', NULL, 72),
-	('20131025', '옥성우', '컴퓨터정보', 3, 'A', 'F', 172, 63),
-	('20132003', '박희철', '전기전자', 3, 'B', 'M', NULL, 63),
-	('20141007', '진현무', '컴퓨터정보', 2, 'A', 'M', 174, 64),
-	('20142021', '심수정', '전기전자', 2, 'A', 'F', 168, 45),
-	('20143054', '유가인', '기계', 2, 'C', 'F', 154, 47),
-	('20151062', '김인중', '컴퓨터정보', 1, 'B', 'M', 166, 67),
-	('20152088', '조민우', '전기전자', 1, 'C', 'M', 188, 90),
-	('20153075', '옥한빛', '기계', 1, 'C', 'M', 177, 80),
-	('20153088', '이태연', '기계', 1, 'C', 'F', 162, 50);
-
--- 테이블 sample1.tbl_board 구조 내보내기
-CREATE TABLE IF NOT EXISTS `tbl_board` (
-  `boardNo` int NOT NULL AUTO_INCREMENT,
-  `title` varchar(255) NOT NULL,
-  `contents` text NOT NULL,
-  `userId` varchar(50) NOT NULL,
-  `cnt` int DEFAULT '0',
-  `cdatetime` datetime DEFAULT CURRENT_TIMESTAMP,
-  `udatetime` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`boardNo`)
-) ENGINE=InnoDB AUTO_INCREMENT=22 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
--- 테이블 데이터 sample1.tbl_board:~15 rows (대략적) 내보내기
-INSERT INTO `tbl_board` (`boardNo`, `title`, `contents`, `userId`, `cnt`, `cdatetime`, `udatetime`) VALUES
-	(1, '오늘의 기분은 어떨까요??', '오늘은 날씨도 맑고 기분이 좋아요! 이런 날은 밖에 나가서 기분 전환을 해보는 것도 좋겠죠? ', 'user001', 56, '2025-04-01 08:00:00', '2025-04-24 17:24:37'),
-	(2, '어제 본 영화 너무 재밌었어요!', '어제 영화관에서 본 영화가 정말 재밌었어요. 다들 보셨나요? 추천합니다.', 'user002', 28, '2025-04-02 09:30:00', '2025-04-24 16:47:56'),
-	(3, '우리는 왜 이렇게 바쁠까요?', '요즘 바쁜 일상 속에서 여유를 찾는 게 점점 더 어려워지는 것 같아요. 여러분은 어떻게 여유를 찾고 계신가요?', 'user003', 6, '2025-04-03 11:15:00', '2025-04-24 16:40:47'),
-	(4, '하루를 마무리하며', '오늘 하루가 어떻게 지나갔는지 한번 되돌아보며, 내일은 더 좋은 하루가 되기를 바래봅니다.', 'user004', 17, '2025-04-04 13:45:00', '2025-04-24 17:15:43'),
-	(5, '새로운 시작, 새로운 도전', '새로운 프로젝트를 시작했습니다! 이렇게 시작하는 게 설렙니다. 실패를 두려워하지 말자고 마음먹고 도전해보려 합니다.', 'user001', 11, '2025-04-05 14:00:00', '2025-04-24 16:40:48'),
-	(6, '주말에는 무엇을 할까요?', '주말에는 모두 무엇을 할 예정인가요? 저는 집에서 휴식을 취하며 영화를 보고 싶어요. 다들 어떻게 보내세요?', 'user002', 14, '2025-04-06 10:10:00', '2025-04-24 16:41:13'),
-	(7, '오늘의 책 한 권', '오늘 읽은 책이 정말 인상 깊었어요. 특히 그 부분이 마음에 와 닿았습니다. 여러분도 한 번 읽어보세요!', 'user003', 23, '2025-04-07 11:45:00', '2025-04-24 16:40:52'),
-	(8, '추억 속 여행', '몇 년 전에 갔던 여행지가 떠오릅니다. 그때의 즐거운 순간들이 아직도 선명하게 기억에 남아요.', 'user004', 32, '2025-04-08 15:20:00', '2025-04-24 16:40:53'),
-	(9, '디지털 시대의 장단점', '디지털 기술이 발달하면서 우리의 삶이 많이 변화했어요. 그러나 그만큼 불편함도 따르죠. 이 변화가 과연 좋은 것일까요?', 'user001', 27, '2025-04-09 09:30:00', '2025-04-24 17:15:35'),
-	(10, '새로운 취미를 시작하다', '최근에 새로운 취미를 시작했어요. 정말 재밌고 시간이 빠르게 지나가네요. 여러분도 새로 시작한 취미가 있나요?', 'user002', 25, '2025-04-10 10:00:00', '2025-04-24 16:40:54'),
-	(11, '인생의 작은 변화', '작은 변화가 인생을 크게 바꿀 수 있다는 말을 요즘 실감하고 있어요. 여러분도 그런 순간을 경험해보셨나요?', 'user003', 15, '2025-04-11 16:00:00', '2025-04-24 16:40:57'),
-	(12, '어린 시절의 추억', '어린 시절의 추억이 떠오릅니다. 그때는 아무 걱정 없이 뛰어놀았던 기억들이 아직도 생생하네요.', 'user004', 9, '2025-04-12 12:10:00', '2025-04-24 17:15:32'),
-	(13, '행복이란 무엇일까?', '행복의 의미를 잘 모르겠어요. 사람마다 다르게 정의할 수 있겠지만, 저는 그냥 작은 것에서 행복을 느끼고 싶어요.', 'user001', 18, '2025-04-13 14:30:00', '2025-04-24 16:41:10'),
-	(17, '테스트1', '111', 'user001', 4, '2025-04-24 15:41:20', '2025-04-24 17:15:40'),
-	(21, '테스트  11', '11', 'user001', 2, '2025-04-24 17:15:17', '2025-04-24 17:15:26');
 
 -- 테이블 sample1.tbl_chat_rooms 구조 내보내기
 CREATE TABLE IF NOT EXISTS `tbl_chat_rooms` (
@@ -312,27 +241,6 @@ INSERT INTO `tbl_hashtag` (`hashtagId`, `tag`) VALUES
 	(4, '232'),
 	(5, '3245'),
 	(6, 'test');
-
--- 테이블 sample1.tbl_member 구조 내보내기
-CREATE TABLE IF NOT EXISTS `tbl_member` (
-  `email` varchar(255) NOT NULL,
-  `pwd` varchar(255) NOT NULL,
-  `userName` varchar(100) NOT NULL,
-  `addr` varchar(255) DEFAULT NULL,
-  `phone` varchar(20) DEFAULT NULL,
-  `birth` date DEFAULT NULL,
-  `intro` varchar(500) DEFAULT NULL,
-  `profileImg` varchar(255) DEFAULT NULL,
-  `cdatetime` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  `udatetime` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`email`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
--- 테이블 데이터 sample1.tbl_member:~3 rows (대략적) 내보내기
-INSERT INTO `tbl_member` (`email`, `pwd`, `userName`, `addr`, `phone`, `birth`, `intro`, `profileImg`, `cdatetime`, `udatetime`) VALUES
-	('test@test.com', '$2b$10$CsDxePrtfl3AU90RfaOOsuMjzGnu9eCxrUCyV88S7ZPd.k/qIM1KO', '홍길동', '인천', '1234', '2025-05-01', '안녕하세요! SNS를 통해 친구들과 소통하고 있습니다. 사진과 일상을 공유하는 것을 좋아해요.', 'uploads\\images_leemember_post_5ec4d19d-e71c-4019-9500-570c4021208b_tnTuXuT_(32)-1746151452608.gif', '2025-05-01 03:13:32', '2025-05-02 02:04:12'),
-	('test1@test.com', '$2b$10$.gZiphHgXZRM36B4IAtPWeSQIzgr9dulSri1lHKvLPiL/xGhl9zEi', '하이루', '인천', '1234', '2025-05-01', '안녕하세요! SNS를 통해 친구들과 소통하고 있습니다. 사진과 일상을 공유하는 것을 좋아해요.', NULL, '2025-05-01 03:17:56', '2025-05-01 03:20:58'),
-	('test2@test.com', '$2b$10$.wZjoxbRgLOmX6eXzKOoO.Q0hFirzZ0U5H9oxWHrVju8wY8M39Leq', '홍길순', '인천', '1234', '2025-05-01', '안녕하세요! SNS를 통해 친구들과 소통하고 있습니다. 사진과 일상을 공유하는 것을 좋아해요.', NULL, '2025-05-01 03:18:04', '2025-05-01 03:20:58');
 
 -- 테이블 sample1.tbl_mention 구조 내보내기
 CREATE TABLE IF NOT EXISTS `tbl_mention` (
@@ -840,72 +748,6 @@ INSERT INTO `tbl_post_like` (`likeId`, `postId`, `userId`, `createdAt`) VALUES
 	(83, 25, 3, '2025-05-13 18:52:37'),
 	(84, 22, 13, '2025-05-14 16:39:04');
 
--- 테이블 sample1.tbl_product 구조 내보내기
-CREATE TABLE IF NOT EXISTS `tbl_product` (
-  `productId` int NOT NULL AUTO_INCREMENT,
-  `productName` varchar(100) NOT NULL,
-  `description` text,
-  `price` decimal(10,0) NOT NULL,
-  `stock` int DEFAULT '0',
-  `category` varchar(50) DEFAULT NULL,
-  `isAvailable` varchar(1) DEFAULT NULL,
-  `cdatetime` datetime DEFAULT CURRENT_TIMESTAMP,
-  `udatetime` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`productId`)
-) ENGINE=InnoDB AUTO_INCREMENT=40 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
--- 테이블 데이터 sample1.tbl_product:~36 rows (대략적) 내보내기
-INSERT INTO `tbl_product` (`productId`, `productName`, `description`, `price`, `stock`, `category`, `isAvailable`, `cdatetime`, `udatetime`) VALUES
-	(1, '무선 이어폰', '고음질 블루투스 무선 이어폰', 79000, 120, '전자기기1', 'Y', '2025-04-22 10:35:41', '2025-04-22 15:41:19'),
-	(2, '남성 반팔티', '여름용 면 반팔티셔츠', 19900, 50, '의류', 'Y', '2025-04-22 10:35:41', '2025-04-22 10:35:41'),
-	(3, '게이밍 마우스1', 'RGB 조명이 있는 고성능 마우스', 45000, 80, '전자기기', 'Y', '2025-04-22 10:35:41', '2025-04-22 15:50:26'),
-	(4, '핸드크림', '보습력이 뛰어난 핸드크림', 8500, 200, '생활용품', 'Y', '2025-04-22 10:35:41', '2025-04-22 10:35:41'),
-	(5, '여성 청바지', '스트레치 데님 청바지', 35900, 35, '의류', 'Y', '2025-04-22 10:35:41', '2025-04-22 10:35:41'),
-	(6, '휴대폰 케이스', '아이폰 14 전용 실리콘 케이스', 12000, 75, '전자기기', 'Y', '2025-04-22 10:35:41', '2025-04-22 10:35:41'),
-	(7, 'LED 스탠드', '조도 조절 가능한 LED 책상용 스탠드', 33000, 60, '생활용품', 'Y', '2025-04-22 10:35:41', '2025-04-22 10:35:41'),
-	(8, '노트북 쿨링패드', '노트북 발열 방지를 위한 쿨링패드', 27000, 40, '전자기기', 'Y', '2025-04-22 10:35:41', '2025-04-22 10:35:41'),
-	(9, '스포츠 양말', '운동용 흡한속건 기능성 양말', 5900, 300, '의류', 'Y', '2025-04-22 10:35:41', '2025-04-22 10:35:41'),
-	(10, '텀블러 500ml', '보온보냉 가능한 스테인리스 텀블러', 21000, 90, '생활용품', 'Y', '2025-04-22 10:35:41', '2025-04-22 10:35:41'),
-	(11, 'USB-C 충전기', '65W 고속충전기', 39000, 100, '전자기기', 'Y', '2025-04-22 10:35:41', '2025-04-22 10:35:41'),
-	(12, '면 화장솜', '100매입 무형광 화장솜', 3000, 180, '생활용품', 'Y', '2025-04-22 10:35:41', '2025-04-22 10:35:41'),
-	(13, '여성 니트', '겨울용 따뜻한 브이넥 니트', 49900, 22, '의류', 'Y', '2025-04-22 10:35:41', '2025-04-22 10:35:41'),
-	(14, '샤워볼', '거품 잘 나는 목욕용 샤워볼', 2500, 150, '생활용품', 'Y', '2025-04-22 10:35:41', '2025-04-22 10:35:41'),
-	(15, '블루투스 스피커', '휴대용 미니 블루투스 스피커', 42000, 45, '전자기기', 'Y', '2025-04-22 10:35:41', '2025-04-22 10:35:41'),
-	(16, '에코백', '캔버스 소재 친환경 에코백', 17900, 110, '의류', 'Y', '2025-04-22 10:35:41', '2025-04-22 10:35:41'),
-	(17, '헤어드라이기', '1200W 강풍모드 드라이기', 32000, 55, '생활용품', 'Y', '2025-04-22 10:35:41', '2025-04-22 10:35:41'),
-	(18, '휴대용 선풍기', 'USB 충전식 미니 선풍기', 15000, 130, '전자기기', 'Y', '2025-04-22 10:35:41', '2025-04-22 10:35:41'),
-	(19, '기모 레깅스', '겨울용 따뜻한 기모 레깅스', 22900, 38, '의류', 'Y', '2025-04-22 10:35:41', '2025-04-22 10:35:41'),
-	(20, '수세미 세트', '3개입 친환경 수세미 세트', 4900, 210, '생활용품', 'Y', '2025-04-22 10:35:41', '2025-04-22 10:35:41'),
-	(23, '1', '1', 11, 1, '1', NULL, '2025-04-22 15:50:34', '2025-04-22 15:50:34'),
-	(24, '1', '1', 1, 1, '1', NULL, '2025-04-23 17:10:12', '2025-04-23 17:10:12'),
-	(25, '12', '12', 23, 2, '2', NULL, '2025-04-23 17:11:45', '2025-04-23 17:11:45'),
-	(26, '1', '1', 1, 1, '1', NULL, '2025-04-23 17:13:18', '2025-04-23 17:13:18'),
-	(27, '34', '3', 43, 3, '3', NULL, '2025-04-23 17:19:07', '2025-04-23 17:19:07'),
-	(28, '22', '22', 22, 22, '22', NULL, '2025-04-23 17:30:08', '2025-04-23 17:30:08'),
-	(29, '2211', '22', 22111, 2, '22', NULL, '2025-04-23 17:31:24', '2025-04-23 17:31:24'),
-	(30, '11111', '11', 1, 1, '1', NULL, '2025-04-23 17:32:26', '2025-04-23 17:32:26'),
-	(31, '23423', '2', 2, 2, '2', NULL, '2025-04-23 17:35:24', '2025-04-23 17:35:24'),
-	(32, '232', '232', 322, 22, '22', NULL, '2025-04-23 17:36:55', '2025-04-23 17:36:55'),
-	(33, '2211', '11', 11, 11, '11', NULL, '2025-04-23 17:37:14', '2025-04-23 17:37:14'),
-	(34, '2211', '11', 11, 11, '11', NULL, '2025-04-23 17:37:55', '2025-04-23 17:37:55'),
-	(35, '2211', '11', 11, 11, '11', NULL, '2025-04-23 17:38:12', '2025-04-23 17:38:12'),
-	(36, '123111', '11', 11, 11, '11', NULL, '2025-04-23 17:39:29', '2025-04-23 17:39:29'),
-	(39, 'test', '324', 232, 232, '11', NULL, '2025-04-23 17:58:04', '2025-04-23 17:58:04');
-
--- 테이블 sample1.tbl_product_file 구조 내보내기
-CREATE TABLE IF NOT EXISTS `tbl_product_file` (
-  `fileNo` int NOT NULL AUTO_INCREMENT,
-  `productId` int DEFAULT NULL,
-  `fileName` varchar(255) DEFAULT NULL,
-  `filePath` varchar(255) DEFAULT NULL,
-  PRIMARY KEY (`fileNo`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
--- 테이블 데이터 sample1.tbl_product_file:~2 rows (대략적) 내보내기
-INSERT INTO `tbl_product_file` (`fileNo`, `productId`, `fileName`, `filePath`) VALUES
-	(1, 38, 'medi.png', 'uploads\\medi-1745397893132.png'),
-	(2, 39, 'cof2.jfif', 'uploads\\cof2-1745398684814.jfif');
-
 -- 테이블 sample1.tbl_story 구조 내보내기
 CREATE TABLE IF NOT EXISTS `tbl_story` (
   `storyId` int NOT NULL AUTO_INCREMENT,
@@ -987,6 +829,28 @@ INSERT INTO `tbl_users` (`id`, `email`, `password`, `username`, `provider`, `ema
 	(10, 'bds388@naver.com', '$2b$10$n8wknPv9rtjX4/vNmJqRAe7gEbWwBophaBLq8gPAHg/g.HhJS3nsS', '수박', 'local', 1, NULL, 'http://localhost:3003/uploads/1746676790529-lt6h4xtawej.png', '2025-05-12 13:01:01', '2025-05-08 03:59:50', 'N'),
 	(13, 'suikari330@gmail.com', '$2b$10$REb2ClSJYFWfFhEWdg6/5eAlmfJWIsVjtNEh0QzyiCUmjfIE3jp5a', '대한', 'local', 1, NULL, 'http://localhost:3003/uploads/1746693774538-rdsio5s9dqi.jfif', '2025-05-15 16:06:40', '2025-05-08 08:42:54', 'N'),
 	(14, 'bds377@naver.com', '$2b$10$8uLZsfC4ctaOif.xaDjk7.SS7MjEEgBaDIVxhq85Hc91cuD6tbexy', '하루', 'local', 1, NULL, 'http://localhost:3003/uploads/1747292593016-4ei3bklajtl.jfif', '2025-05-15 16:19:10', '2025-05-15 07:03:13', 'N');
+	INSERT INTO tbl_users (email, password, username, provider, emailVerified, introduce, profileImage, lastLogin)
+	VALUES
+	('alice@example.com', 'hashed_pw1', 'Alice', 'local', TRUE, 'Hi, I am Alice.', '/images/alice.jpg', '2025-05-18 10:00:00'),
+	('bob@example.com', 'hashed_pw2', 'Bob', 'google', TRUE, 'Just Bob.', '/images/bob.jpg', '2025-05-17 12:30:00'),
+	('carol@example.com', 'hashed_pw3', 'Carol', 'facebook', FALSE, 'Nature lover.', '/images/carol.png', '2025-05-15 09:00:00'),
+	('dave@example.com', 'hashed_pw4', 'Dave', 'local', TRUE, 'Developer', '/images/dave.jpg', '2025-05-16 16:45:00'),
+	('eve@example.com', 'hashed_pw5', 'Eve', 'local', FALSE, 'Security enthusiast.', '/images/eve.jpg', NULL),
+	('frank@example.com', 'hashed_pw6', 'Frank', 'kakao', TRUE, 'Living life.', '/images/frank.png', '2025-05-13 22:15:00'),
+	('grace@example.com', 'hashed_pw7', 'Grace', 'local', TRUE, 'Photographer.', '/images/grace.jpg', '2025-05-14 07:50:00'),
+	('heidi@example.com', 'hashed_pw8', 'Heidi', 'google', FALSE, 'Coffee addict.', '/images/heidi.jpg', NULL),
+	('ivan@example.com', 'hashed_pw9', 'Ivan', 'local', TRUE, 'Crypto guy.', '/images/ivan.jpg', '2025-05-10 18:20:00'),
+	('judy@example.com', 'hashed_pw10', 'Judy', 'facebook', FALSE, 'Bookworm.', '/images/judy.jpg', '2025-05-11 14:30:00'),
+	('ken@example.com', 'hashed_pw11', 'Ken', 'local', TRUE, 'Musician.', '/images/ken.jpg', '2025-05-09 09:45:00'),
+	('laura@example.com', 'hashed_pw12', 'Laura', 'naver', TRUE, 'Traveler.', '/images/laura.png', '2025-05-08 13:10:00'),
+	('mallory@example.com', 'hashed_pw13', 'Mallory', 'local', FALSE, 'Just vibes.', '/images/mallory.jpg', NULL),
+	('nancy@example.com', 'hashed_pw14', 'Nancy', 'google', TRUE, 'Cat mom.', '/images/nancy.jpg', '2025-05-06 19:30:00'),
+	('oscar@example.com', 'hashed_pw15', 'Oscar', 'local', TRUE, 'Web dev.', '/images/oscar.jpg', '2025-05-05 11:11:00'),
+	('peggy@example.com', 'hashed_pw16', 'Peggy', 'facebook', FALSE, 'Artist.', '/images/peggy.jpg', '2025-05-04 17:20:00'),
+	('quinn@example.com', 'hashed_pw17', 'Quinn', 'kakao', TRUE, 'Student.', '/images/quinn.jpg', '2025-05-03 08:08:00'),
+	('rick@example.com', 'hashed_pw18', 'Rick', 'local', TRUE, 'Gamer.', '/images/rick.png', '2025-05-02 21:21:00'),
+	('sybil@example.com', 'hashed_pw19', 'Sybil', 'google', FALSE, 'Designer.', '/images/sybil.jpg', '2025-05-01 15:00:00'),
+	('trent@example.com', 'hashed_pw20', 'Trent', 'local', TRUE, 'Engineer.', '/images/trent.jpg', '2025-04-30 20:30:00');
 
 /*!40103 SET TIME_ZONE=IFNULL(@OLD_TIME_ZONE, 'system') */;
 /*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;

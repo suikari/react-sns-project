@@ -24,10 +24,18 @@ function App() {
   const isAuthPage = location.pathname === '/login' || location.pathname === '/signup' || location.pathname === '/find-id' || location.pathname === '/find-password';
   const navigate = useNavigate(); // 페이지 이동을 위한 함수 리턴
 
-  const [darkMode, setDarkMode] = useState(false); // 다크모드 여부
+  const [darkMode, setDarkMode] = useState(() => {
+    // 초기값을 로컬스토리지에서 가져오고 없으면 false
+    const saved = localStorage.getItem("darkMode");
+    return saved === "true" ? true : false;
+  });
 
   let DarkMode = { darkMode , setDarkMode};
-
+  
+  useEffect(() => {
+    // darkMode 값이 변경될 때마다 로컬스토리지에 저장
+    localStorage.setItem("darkMode", darkMode);
+  }, [darkMode]);
 
   const theme = createTheme({
     palette: {
