@@ -18,7 +18,7 @@ const ForgotEmail = () => {
 
   const handleFindEmail = async () => {
     try {
-      const res = await fetch('http://localhost:3003/api/auth/find-id', {
+      const res = await fetch(`http://${process.env.REACT_APP_API_BASE_URL}/api/auth/find-id`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username }),

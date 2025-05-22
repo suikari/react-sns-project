@@ -29,7 +29,7 @@ const StoryUploadModal = ({ open, handleClose, onUploadSuccess }) => {
 
     setUploading(true);
     try {
-      await axios.post('http://localhost:3003/api/story', formData, {
+      await axios.post(`http://${process.env.REACT_APP_API_BASE_URL}/api/story`, formData, {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'multipart/form-data',

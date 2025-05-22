@@ -169,7 +169,8 @@ exports.getUserId = async (req, res) => {
 exports.UpdateUser = async (req, res) => {
   const userId = req.params.id;
   const { username, intro } = req.body;
-  const profileImage = req.file ? `${process.env.SERVER_URL}/uploads/${req.file.filename}` : null;
+
+  const profileImage = req.s3Files ? `${req.s3Files[0].location}` : null;
 
   try {
     // 먼저 기존 사용자 정보 확인

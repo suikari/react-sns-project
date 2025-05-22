@@ -4,8 +4,15 @@ require('dotenv').config();
 exports.createStories = async (req, res) => {
     const userId = req.user.id;
     const { caption } = req.body;
-    const mediaPath = `${process.env.SERVER_URL}/uploads/${req.file.filename}`;
-    const mediaType = req.file.mimetype.startsWith('video') ? 'video' : 'image';
+
+    const file = req.s3Files[0];
+
+    if (!file) {
+      return res.status(400).json({ error: '파일이 업로드되지 않았습니다.' });
+    }
+
+    const mediaPath = `${file.location}`;
+    const mediaType = file.mimetype.startsWith('video') ? 'video' : 'image';
   
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24시간 후
   

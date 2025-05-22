@@ -26,7 +26,7 @@ const FeedEdit = ({ open, handleClose, postId }) => {
       const token = localStorage.getItem('token');
 
       // 피드 정보 조회
-      axios.get(`http://localhost:3003/api/feed/${postId}`, {
+      axios.get(`http://${process.env.REACT_APP_API_BASE_URL}/api/feed/${postId}`, {
               headers: { Authorization: `Bearer ${token}` },
             })
         .then(res => {
@@ -122,7 +122,7 @@ const FeedEdit = ({ open, handleClose, postId }) => {
     files.forEach(file => formData.append('files', file));
     formData.append('existingImages', JSON.stringify(existingImages)); // 서버에 남길 기존 이미지 정보
 
-    axios.put(`http://localhost:3003/api/feed/${postId}`, formData, {
+    axios.put(`http://${process.env.REACT_APP_API_BASE_URL}/api/feed/${postId}`, formData, {
       headers: {
         Authorization: `Bearer ${token}`,
         'Content-Type': 'multipart/form-data',

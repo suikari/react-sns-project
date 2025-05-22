@@ -21,7 +21,7 @@ const ResetPassword = () => {
 
   const handleSendCode = async () => {
     try {
-      const res = await fetch('http://localhost:3003/api/auth/send-reset-code', {
+      const res = await fetch(`http://${process.env.REACT_APP_API_BASE_URL}/api/auth/send-reset-code`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
@@ -42,7 +42,7 @@ const ResetPassword = () => {
 
   const handleVerifyCode = async () => {
     try {
-      const res = await fetch('http://localhost:3003/api/auth/verify-reset-code', {
+      const res = await fetch(`http://${process.env.REACT_APP_API_BASE_URL}/api/auth/verify-reset-code`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, code }),
@@ -63,7 +63,7 @@ const ResetPassword = () => {
 
   const handleResetPassword = async () => {
     try {
-      const res = await fetch('http://localhost:3003/api/auth/reset-password', {
+      const res = await fetch(`http://${process.env.REACT_APP_API_BASE_URL}/api/auth/reset-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, code, newPassword }),

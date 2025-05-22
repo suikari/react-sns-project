@@ -43,7 +43,11 @@ exports.createPost = async (req, res) => {
     const userId = req.user.id;
     const userName = req.user.userName;
 
-    
+    const imageData = req.s3Files?.map(file => ({
+      url: file.location,           // S3 업로드된 파일의 URL
+      mimetype: file.mimetype           // 파일의 MIME 타입 (예: image/jpeg, image/png 등)
+    })) || [];
+
     try {
       // 1. 피드 등록
       const [postResult] = await db.execute(
@@ -52,13 +56,14 @@ exports.createPost = async (req, res) => {
       );
       const postId = postResult.insertId;
   
+      console.log('sss',imageData);
       // 2. 파일 업로드 처리
-      if (files && files.length > 0) {
-        for (const file of files) {
+      if (imageData && imageData.length > 0) {
+        for (const file of imageData) {
           const fileType = file.mimetype.startsWith('video') ? 'video' : 'image';
           await db.execute(
             'INSERT INTO tbl_post_file (postId, filePath, fileType) VALUES (?, ?, ?)',
-            [postId, `${process.env.SERVER_URL}/uploads/${file.filename}`, fileType]
+            [postId, `${file.url}`, fileType]
           );
         }
       }
@@ -705,13 +710,19 @@ exports.updateFeed = async (req, res) => {
       }
     }
 
+
+    const imageData = req.s3Files?.map(file => ({
+      url: file.location,           // S3 업로드된 파일의 URL
+      mimetype: file.mimetype           // 파일의 MIME 타입 (예: image/jpeg, image/png 등)
+    })) || [];
+
     // 6. 새 이미지 저장
-    if (req.files && req.files.length > 0) {
-      for (const file of req.files) {
+    if (imageData && imageData.length > 0) {
+      for (const file of imageData) {
         const fileType = file.mimetype.startsWith('video') ? 'video' : 'image';
         await db.query('INSERT INTO tbl_post_file (postId, filePath, fileType) VALUES (?, ?, ?)', [
           postId,
-          `${process.env.SERVER_URL}/uploads/${file.filename}`,
+          `${file.url}`,
           fileType
         ]);
       }

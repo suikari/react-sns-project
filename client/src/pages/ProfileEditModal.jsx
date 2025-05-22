@@ -29,7 +29,7 @@ export default function ProfileEditModal({ open, onClose, user, onUpdate }) {
   };
 
   const handleSave = async () => {
-    const res = await axios.post('http://localhost:3003/api/users/check-username', {
+    const res = await axios.post(`http://${process.env.REACT_APP_API_BASE_URL}/api/users/check-username`, {
         username: username,
         id: user.id, // 본인의 id 전달
       });
@@ -49,7 +49,7 @@ export default function ProfileEditModal({ open, onClose, user, onUpdate }) {
 
     try {
       const res = await axios.put(
-        `http://localhost:3003/api/users/${user.id}/profile`,
+        `http://${process.env.REACT_APP_API_BASE_URL}/api/users/${user.id}/profile`,
         formData,
         {
           headers: {

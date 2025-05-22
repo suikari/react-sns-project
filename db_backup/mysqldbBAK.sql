@@ -133,56 +133,6 @@ INSERT INTO `tbl_comment` (`commentId`, `postId`, `userId`, `parentId`, `content
 	(42, 25, 3, 34, '332', '2025-05-13 18:22:27', '2025-05-13 18:56:34'),
 	(43, 25, 3, NULL, '>', '2025-05-14 18:48:58', '2025-05-14 18:48:58');
 
--- 테이블 sample1.tbl_feed 구조 내보내기
-CREATE TABLE IF NOT EXISTS `tbl_feed` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `userId` varchar(100) DEFAULT NULL,
-  `title` varchar(200) DEFAULT NULL,
-  `content` text,
-  `cdatetime` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=47 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
--- 테이블 데이터 sample1.tbl_feed:~2 rows (대략적) 내보내기
-INSERT INTO `tbl_feed` (`id`, `userId`, `title`, `content`, `cdatetime`) VALUES
-	(45, 'test@test.com', '썸네일 테스트', 'ㅌㅅㅌ', '2025-05-02 02:15:51'),
-	(46, 'test@test.com', 'ㅌㅅㅌ', '3343', '2025-05-02 06:06:42');
-
--- 테이블 sample1.tbl_feed_comments 구조 내보내기
-CREATE TABLE IF NOT EXISTS `tbl_feed_comments` (
-  `commentId` bigint NOT NULL AUTO_INCREMENT,
-  `feedId` bigint NOT NULL,
-  `userId` varchar(100) NOT NULL DEFAULT '',
-  `content` text NOT NULL,
-  `parentId` bigint DEFAULT NULL,
-  `createdAt` datetime DEFAULT (now()),
-  `updatedAt` datetime DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
-  `isDeleted` char(1) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT 'N',
-  PRIMARY KEY (`commentId`) USING BTREE
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
--- 테이블 데이터 sample1.tbl_feed_comments:~3 rows (대략적) 내보내기
-INSERT INTO `tbl_feed_comments` (`commentId`, `feedId`, `userId`, `content`, `parentId`, `createdAt`, `updatedAt`, `isDeleted`) VALUES
-	(1, 45, 'test@test.com', '첫 번째 댓글입니다.', NULL, '2025-05-02 14:40:32', '2025-05-02 14:41:09', 'N'),
-	(2, 45, 'test@test.com', '두 번째 댓글입니다.', NULL, '2025-05-02 14:40:32', '2025-05-02 14:41:10', 'N'),
-	(3, 45, 'test@test.com', '세 번째 댓글입니다.', NULL, '2025-05-02 14:40:32', '2025-05-02 14:41:10', 'N');
-
--- 테이블 sample1.tbl_feed_img 구조 내보내기
-CREATE TABLE IF NOT EXISTS `tbl_feed_img` (
-  `imgNo` int NOT NULL AUTO_INCREMENT,
-  `feedId` int NOT NULL,
-  `imgName` varchar(255) NOT NULL,
-  `imgPath` varchar(500) NOT NULL,
-  `thumbnailYn` varchar(1) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
-  PRIMARY KEY (`imgNo`)
-) ENGINE=InnoDB AUTO_INCREMENT=14 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
--- 테이블 데이터 sample1.tbl_feed_img:~3 rows (대략적) 내보내기
-INSERT INTO `tbl_feed_img` (`imgNo`, `feedId`, `imgName`, `imgPath`, `thumbnailYn`) VALUES
-	(11, 45, 'photo-1521747116042-5a810fda9664.jfif', 'uploads\\photo-1521747116042-5a810fda9664-1746152151575.jfif', 'Y'),
-	(12, 45, 'Lodingdog.png', 'uploads\\Lodingdog-1746152151593.png', 'N'),
-	(13, 46, 'Lodingdog.png', 'uploads\\Lodingdog-1746166002063.png', 'Y');
-
 -- 테이블 sample1.tbl_follow 구조 내보내기
 CREATE TABLE IF NOT EXISTS `tbl_follow` (
   `id` int NOT NULL AUTO_INCREMENT,

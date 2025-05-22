@@ -11,7 +11,7 @@ export async function formatMentions(text) {
     try {
        // console.log('2222',username);
 
-      const res = await axios.get(`http://localhost:3003/api/users/getUserId/${username}`);
+      const res = await axios.get(`http://${process.env.REACT_APP_API_BASE_URL}/api/users/getUserId/${username}`);
       const userId = res.data.id;
       //console.log('2222',userId,username);
 

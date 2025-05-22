@@ -37,7 +37,7 @@ const SearchDrawer = ({
     try {
       const token = localStorage.getItem('token');
       setLoading(true);
-      const response = await axios.get(`http://localhost:3003/api/users/search/${searchQuery}`, {
+      const response = await axios.get(`http://${process.env.REACT_APP_API_BASE_URL}/api/users/search/${searchQuery}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setSearchResults(response.data || []);
@@ -57,7 +57,7 @@ const SearchDrawer = ({
   const fetchRecommendedFriends = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get('http://localhost:3003/api/users/RandomFriends', {
+      const response = await axios.get(`http://${process.env.REACT_APP_API_BASE_URL}/api/users/RandomFriends`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setRecommendedFriends( response.data.recommendations || []);

@@ -130,7 +130,7 @@ function Menu() {
     try {
       console.log('test33','2342342');
       // 서버에 읽음 처리 요청
-      await axios.post(`http://localhost:3003/api/notifications/${id}/read`,{},{
+      await axios.post(`http://${process.env.REACT_APP_API_BASE_URL}/api/notifications/${id}/read`,{},{
         headers: { Authorization: `Bearer ${token}` },
       })        
       .then(res => {
@@ -153,7 +153,7 @@ function Menu() {
   
     const fetchNotifications = async () => {
       try {
-        const res = await axios.get('http://localhost:3003/api/notifications', {
+        const res = await axios.get(`http://${process.env.REACT_APP_API_BASE_URL}/api/notifications`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         setNotifications(res.data);
@@ -176,7 +176,7 @@ function Menu() {
     //if (notificationDrawerOpen) {
       const token = localStorage.getItem('token');
 
-      axios.get('http://localhost:3003/api/notifications',{
+      axios.get(`http://${process.env.REACT_APP_API_BASE_URL}/api/notifications`,{
           headers: { Authorization: `Bearer ${token}` },
       })
         .then(res => {

@@ -14,7 +14,7 @@ const LoginPage = () => {
 
   const handleLogin = async () => {
     try {
-      const res = await axios.post('http://localhost:3003/api/auth/login', { email, password });
+      const res = await axios.post(`http://${process.env.REACT_APP_API_BASE_URL}/api/auth/login`, { email, password });
       const { token, user } = res.data;
       localStorage.setItem('token', token);
       
@@ -47,7 +47,7 @@ const LoginPage = () => {
           const provider = 'google';
   
           // 요청을 보내기 전에 필요한 데이터를 담아보냄
-          axios.post('http://localhost:3003/api/auth/social', {
+          axios.post(`http://${process.env.REACT_APP_API_BASE_URL}/api/auth/social`, {
             email,
             username,
             profileImage,

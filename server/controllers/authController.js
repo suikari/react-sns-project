@@ -40,10 +40,11 @@ exports.verifyCode = (req, res) => {
 
 exports.signup = async (req, res) => {
     const { username, email, password } = req.body;
-    const profileImage = req.file
-    ? `${process.env.SERVER_URL}/uploads/${req.file.filename}`
+    const profileImage = req.s3Files
+    ? `${req.s3Files[0].location}`
     : null;  
     
+
     try {
       const [existing] = await db.query('SELECT * FROM tbl_users WHERE email = ?', [email]);
       if (existing.length > 0) {

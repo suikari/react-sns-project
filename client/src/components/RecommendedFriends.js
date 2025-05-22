@@ -37,7 +37,7 @@ const RecommendedFriends = () => {
     setError(false);
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get('http://localhost:3003/api/users/RandomFriends', {
+      const response = await axios.get(`http://${process.env.REACT_APP_API_BASE_URL}/api/users/RandomFriends`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setFriends(
@@ -80,7 +80,7 @@ const RecommendedFriends = () => {
       const token = localStorage.getItem('token') || '';
   
       try {
-        await axios.post(`http://localhost:3003/api/users/${userId}/follow`, {}, {
+        await axios.post(`http://${process.env.REACT_APP_API_BASE_URL}/api/users/${userId}/follow`, {}, {
           headers: { Authorization: `Bearer ${token}` }
         });
 
@@ -104,7 +104,7 @@ const RecommendedFriends = () => {
       const token = localStorage.getItem('token') || '';
   
       try {
-        await axios.delete(`http://localhost:3003/api/users/${userId}/unfollow`, {
+        await axios.delete(`http://${process.env.REACT_APP_API_BASE_URL}/api/users/${userId}/unfollow`, {
           headers: { Authorization: `Bearer ${token}` }
         });
 

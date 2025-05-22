@@ -26,7 +26,7 @@ import AttachFileIcon from '@mui/icons-material/AttachFile'; // 추가된 부분
 import CloseIcon from '@mui/icons-material/Close';
 import { getTimeAgo } from '../utils/timeAgo';
 
-const socket = io('http://localhost:3003');
+const socket = io(`http://${process.env.REACT_APP_API_BASE_URL}`);
 
 const GroupChatPage = () => {
   const [chatRooms, setChatRooms] = useState([]);
@@ -58,7 +58,7 @@ const GroupChatPage = () => {
       const userId = decoded.id;
       setUserid(decoded.id);
       axios
-        .get(`http://localhost:3003/api/users/following/${userId}`, {
+        .get(`http://${process.env.REACT_APP_API_BASE_URL}/api/users/following/${userId}`, {
           headers: { Authorization: `Bearer ${token}` },
         })
         .then((res) => {
@@ -81,7 +81,7 @@ const GroupChatPage = () => {
 
   const fetchChatRooms = async () => {
     try {
-      const res = await axios.get('http://localhost:3003/api/chat/rooms', {
+      const res = await axios.get(`http://${process.env.REACT_APP_API_BASE_URL}/api/chat/rooms`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -109,7 +109,7 @@ const GroupChatPage = () => {
 
 
     // axios
-    //   .get(`http://localhost:3003/api/chat/rooms/${currentRoomId}/messages`, {
+    //   .get(`http://${process.env.REACT_APP_API_BASE_URL}/api/chat/rooms/${currentRoomId}/messages`, {
     //     headers: { Authorization: `Bearer ${token}` },
     //   })
     //   .then((res) => {
@@ -179,7 +179,7 @@ const GroupChatPage = () => {
         const formData = new FormData();
         formData.append('file', file);
 
-        const response = await fetch('http://localhost:3003/api/chat/messages/upload', {
+        const response = await fetch(`http://${process.env.REACT_APP_API_BASE_URL}/api/chat/messages/upload`, {
           method: 'POST',
           body: formData,
         });
@@ -218,7 +218,7 @@ const GroupChatPage = () => {
   const handleCreateRoom = async () => {
     try {
       const res = await axios.post(
-        'http://localhost:3003/api/chat/rooms',
+        `http://${process.env.REACT_APP_API_BASE_URL}/api/chat/rooms`,
         {
           roomName: newRoomName,
           userIds: inviteUserIds.split(',').map((id) => parseInt(id.trim())),
@@ -240,7 +240,7 @@ const GroupChatPage = () => {
   const handleFollowUserClick = async (targetUserId) => {
     try {
       const res = await axios.post(
-        'http://localhost:3003/api/chat/direct',
+        `http://${process.env.REACT_APP_API_BASE_URL}/api/chat/direct`,
         { targetUserId },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -285,7 +285,7 @@ const GroupChatPage = () => {
       }
 
     axios
-      .delete(`http://localhost:3003/api/chat/messages/${messageId}`, {
+      .delete(`http://${process.env.REACT_APP_API_BASE_URL}/api/chat/messages/${messageId}`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then(() => {
@@ -306,7 +306,7 @@ const GroupChatPage = () => {
     setIsLoading(true);
 
     try {
-      const res = await axios.get(`http://localhost:3003/api/chat/rooms/${currentRoomId}/messages`, {
+      const res = await axios.get(`http://${process.env.REACT_APP_API_BASE_URL}/api/chat/rooms/${currentRoomId}/messages`, {
         headers: { Authorization: `Bearer ${token}` },
         params: {
           limit: 20,

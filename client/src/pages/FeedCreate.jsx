@@ -30,7 +30,7 @@ const FeedCreate = ({ open, handleClose }) => {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const response = await axios.get('http://localhost:3003/api/users');
+        const response = await axios.get(`http://${process.env.REACT_APP_API_BASE_URL}/api/users`);
         setUsers(response.data);
       } catch (error) {
         console.error('사용자 목록 가져오기 실패:', error);
@@ -168,7 +168,7 @@ const handleMentionSelect = (user) => {
     files.forEach((file) => formData.append('files', file));
 
     axios
-      .post('http://localhost:3003/api/feed', formData, {
+      .post(`http://${process.env.REACT_APP_API_BASE_URL}/api/feed`, formData, {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'multipart/form-data',

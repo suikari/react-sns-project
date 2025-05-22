@@ -31,7 +31,7 @@ export default function FeedDetailModal({ open, onClose, postId }) {
     if (!postId) return;
 
     const token = localStorage.getItem('token');
-    const res = await axios.get(`http://localhost:3003/api/feed/${postId}`, {
+    const res = await axios.get(`http://${process.env.REACT_APP_API_BASE_URL}/api/feed/${postId}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     setPost(res.data);
@@ -72,7 +72,7 @@ export default function FeedDetailModal({ open, onClose, postId }) {
       const token = localStorage.getItem('token');
 
       await axios.post(
-        'http://localhost:3003/api/feed/comment',
+        `http://${process.env.REACT_APP_API_BASE_URL}/api/feed/comment`,
         {
           postId: feedId,
           content: newComment,
@@ -99,7 +99,7 @@ export default function FeedDetailModal({ open, onClose, postId }) {
       }
 
       const token = localStorage.getItem('token');
-      await axios.delete(`http://localhost:3003/api/feed/comment/${commentId}`, {
+      await axios.delete(`http://${process.env.REACT_APP_API_BASE_URL}/api/feed/comment/${commentId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -116,7 +116,7 @@ export default function FeedDetailModal({ open, onClose, postId }) {
       const token = localStorage.getItem('token');
 
       await axios.post(
-        'http://localhost:3003/api/feed/comment',
+        `http://${process.env.REACT_APP_API_BASE_URL}/api/feed/comment`,
         {
           postId: feedId,
           content: newReply,
@@ -138,7 +138,7 @@ export default function FeedDetailModal({ open, onClose, postId }) {
     try {
       const token = localStorage.getItem('token');
       await axios.put(
-        'http://localhost:3003/api/feed/comment',
+        `http://${process.env.REACT_APP_API_BASE_URL}/api/feed/comment`,
         {
           commentId,
           content: editedComment,
@@ -163,7 +163,7 @@ export default function FeedDetailModal({ open, onClose, postId }) {
       }
 
       const token = localStorage.getItem('token');
-      await axios.delete(`http://localhost:3003/api/feed/comment/${replyId}`, {
+      await axios.delete(`http://${process.env.REACT_APP_API_BASE_URL}/api/feed/comment/${replyId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -176,7 +176,7 @@ export default function FeedDetailModal({ open, onClose, postId }) {
   const handleLikeClick = async (feedId) => {
     try {
       const token = localStorage.getItem('token');
-      await axios.post(`http://localhost:3003/api/feed/${feedId}/like`, {}, {
+      await axios.post(`http://${process.env.REACT_APP_API_BASE_URL}/api/feed/${feedId}/like`, {}, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -195,7 +195,7 @@ export default function FeedDetailModal({ open, onClose, postId }) {
 
       const token = localStorage.getItem('token');
       await axios.put(
-        'http://localhost:3003/api/feed/comment',
+        `http://${process.env.REACT_APP_API_BASE_URL}/api/feed/comment`,
         {
           commentId : replyId,
           content: editedReplyContent,

@@ -13,7 +13,7 @@ const StoryViewModal = ({ open, handleClose, user }) => {
   const handleStoryView = async (storyId) => {
     const token = localStorage.getItem('token');
     try {
-      await axios.post(`http://localhost:3003/api/story/view/${storyId}`, null, {
+      await axios.post(`http://${process.env.REACT_APP_API_BASE_URL}/api/story/view/${storyId}`, null, {
         headers: { Authorization: `Bearer ${token}` },
         withCredentials: true
       });

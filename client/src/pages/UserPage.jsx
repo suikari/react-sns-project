@@ -95,18 +95,18 @@ export default function UserPage() {
       }
 
       const [userRes, followRes, myfeed, mycomment, mylikelist, myStories ] = await Promise.all([
-        axios.get(`http://localhost:3003/api/users/${userId}`),
-        axios.get(`http://localhost:3003/api/users/follow/info/${userId}`),
-        axios.get(`http://localhost:3003/api/feed?filter=my&userId=${userId}`, {
+        axios.get(`http://${process.env.REACT_APP_API_BASE_URL}/api/users/${userId}`),
+        axios.get(`http://${process.env.REACT_APP_API_BASE_URL}/api/users/follow/info/${userId}`),
+        axios.get(`http://${process.env.REACT_APP_API_BASE_URL}/api/feed?filter=my&userId=${userId}`, {
           headers: { Authorization: `Bearer ${token}` },
         }),
-        axios.get(`http://localhost:3003/api/feed/comment/${userId}`, {
+        axios.get(`http://${process.env.REACT_APP_API_BASE_URL}/api/feed/comment/${userId}`, {
             headers: { Authorization: `Bearer ${token}` },
         }),
-        axios.get(`http://localhost:3003/api/feed/like/${userId}`, {
+        axios.get(`http://${process.env.REACT_APP_API_BASE_URL}/api/feed/like/${userId}`, {
           headers: { Authorization: `Bearer ${token}` },
         }),
-        axios.get(`http://localhost:3003/api/story/my`, {
+        axios.get(`http://${process.env.REACT_APP_API_BASE_URL}/api/story/my`, {
           headers: { Authorization: `Bearer ${token}` },
         }),
       ]);
@@ -140,7 +140,7 @@ export default function UserPage() {
     const token = localStorage.getItem('token') || '';
 
     try {
-      await axios.post(`http://localhost:3003/api/users/${userId}/follow`, {}, {
+      await axios.post(`http://${process.env.REACT_APP_API_BASE_URL}/api/users/${userId}/follow`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setIsFollowing(true);
@@ -158,7 +158,7 @@ export default function UserPage() {
     const token = localStorage.getItem('token') || '';
 
     try {
-      await axios.delete(`http://localhost:3003/api/users/${userId}/unfollow`, {
+      await axios.delete(`http://${process.env.REACT_APP_API_BASE_URL}/api/users/${userId}/unfollow`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setIsFollowing(false);
@@ -280,7 +280,7 @@ export default function UserPage() {
                 }}
             >
                 <img
-                src={ feed.files?.[0]?.filePath || "http://localhost:3003/uploads/noimage.jpg"}
+                src={ feed.files?.[0]?.filePath || `http://${process.env.REACT_APP_API_BASE_URL}/uploads/noimage.jpg`}
                 alt={ feed.title }
                 style={{
                     width: '100%',
@@ -375,7 +375,7 @@ export default function UserPage() {
                   }}
                 >
                   <img
-                    src={feed.thumbnail || "http://localhost:3003/uploads/noimage.jpg"}
+                    src={feed.thumbnail || `http://${process.env.REACT_APP_API_BASE_URL}/uploads/noimage.jpg` }
                     alt={feed.content}
                     style={{
                       width: '100%',

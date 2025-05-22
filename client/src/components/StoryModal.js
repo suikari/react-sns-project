@@ -22,7 +22,7 @@ const StoryModal = ({ open, handleClose }) => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      const res = await axios.get('http://localhost:3003/api/story/followed', {
+      const res = await axios.get(`http://${process.env.REACT_APP_API_BASE_URL}/api/story/followed`, {
         headers: { Authorization: `Bearer ${token}` },
         withCredentials: true
       });
@@ -45,7 +45,7 @@ const StoryModal = ({ open, handleClose }) => {
   const handleStoryView = async (storyId) => {
     const token = localStorage.getItem('token');
     try {
-      await axios.post(`http://localhost:3003/api/story/view/${storyId}`, null, {
+      await axios.post(`http://${process.env.REACT_APP_API_BASE_URL}/api/story/view/${storyId}`, null, {
         headers: { Authorization: `Bearer ${token}` },
         withCredentials: true
       });

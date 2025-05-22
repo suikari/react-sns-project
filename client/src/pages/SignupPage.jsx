@@ -42,7 +42,7 @@ const SignupForm = ({ onSuccess }) => {
   const sendVerification = async () => {
     try {
         console.log("test",'');
-      await axios.post('http://localhost:3003/api/auth/send-verification', { email: form.email });
+      await axios.post(`http://${process.env.REACT_APP_API_BASE_URL}/api/auth/send-verification`, { email: form.email });
       setVerifySent(true);
     } catch (err) {
       setErrorMsg('인증 메일 전송 실패');
@@ -51,7 +51,7 @@ const SignupForm = ({ onSuccess }) => {
 
   const verifyCode = async () => {
     try {
-        const res = await axios.post('http://localhost:3003/api/auth/verify-code', {
+        const res = await axios.post(`http://${process.env.REACT_APP_API_BASE_URL}/api/auth/verify-code`, {
         email: form.email,
         code: verificationCode,
       });
@@ -76,7 +76,7 @@ const SignupForm = ({ onSuccess }) => {
     if (profileImage) formData.append('profileImage', profileImage);
 
     try {
-        await axios.post("http://localhost:3003/api/auth/signup", formData, {
+        await axios.post(`http://${process.env.REACT_APP_API_BASE_URL}/api/auth/signup`, formData, {
             headers: { "Content-Type": "multipart/form-data" },
         });
       alert("회원가입 완료!");

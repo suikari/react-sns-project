@@ -301,18 +301,19 @@ exports.deleteMessage = async (req, res) => {
 
 
 exports.fileUpload = (req, res) => {
-  const file = req.file;
+
+  const file = req.s3Files[0];
 
   if (!file) {
     return res.status(400).json({ error: '파일이 업로드되지 않았습니다.' });
   }
 
   // 클라이언트가 접근할 수 있는 URL 경로
-  const fileUrl = `${process.env.SERVER_URL}/uploads/${file.filename}`;
+  const fileUrl = `${file.location}`;
 
   res.json({
     fileUrl,
-    fileName: file.originalname,
+    fileName: file.originalname || '',
     fileType: file.mimetype
   });
 };

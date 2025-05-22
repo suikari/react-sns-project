@@ -64,7 +64,7 @@ const FollowedUserSlider = () => {
 
     const fetchFollowedUsers = async () => {
       try {
-        const res = await axios.get(`http://localhost:3003/api/users/followingStory/${userId}`, {
+        const res = await axios.get(`http://${process.env.REACT_APP_API_BASE_URL}/api/users/followingStory/${userId}`, {
           headers: {
             Authorization: `Bearer ${localStorage.getItem('token')}`,
           },
